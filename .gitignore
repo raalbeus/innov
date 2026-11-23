@@ -1,0 +1,6 @@
+.env
+data/
+__pycache__/
+*.pyc
+# Confidential test data (BI tender, Specifications Table). Do not push to any shared or public repository.
+tests/fixtures/

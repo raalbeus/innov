@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="small"><a href="/home">Back to home</a></p>
+{% if job.status in ('queued', 'running') %}
+<section class="card" id="progress" data-job="{{ job.id }}">
+  <div class="eyebrow">Running</div>
+  <h1>{{ job.title }}</h1>
+  <p id="step">{{ job.step }}</p>
+  <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ job.progress }}"><div id="bar" class="meter-fill w{{ (job.progress // 5) * 5 }}"></div></div>
+  <p class="source">Reading a large scanned tender takes several minutes. You can leave this page; the run continues and appears in your history.</p>
+</section>
+{% elif job.status == 'failed' %}
+<section class="card">
+  <div class="eyebrow">Failed</div>
+  <h1>{{ job.title }}</h1>
+  <div class="notice red" role="alert">{{ job.error }}</div>
+</section>
+{% else %}
+{% set r = job.result %}
+<section class="card">
+  <div class="eyebrow">Recommendation</div>
+  <h1>{{ r.bid.procuring_entity }}: {{ r.bid.title }}</h1>
+  <p class="verdict"><span class="tag big {{ r.verdict | verdict_class }}">{{ r.verdict }}</span>
+  {% if r.recommended_site %} Best-fit site: <strong>{{ r.recommended_site }}</strong>{% endif %}</p>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-label">Reference</div><div class="kpi-value">{{ r.bid.reference_no or '-' }}</div></div>
+    <div class="kpi"><div class="kpi-label">ABC (PHP)</div><div class="kpi-value">{{ '{:,.2f}'.format(r.bid.abc_php) if r.bid.abc_php else 'Not stated' }}</div></div>
+    <div class="kpi"><div class="kpi-label">Bid deadline</div><div class="kpi-value">{{ r.bid.bid_deadline or '-' }}</div></div>
+    <div class="kpi"><div class="kpi-label">Requirements</div><div class="kpi-value">{{ r.counts.requirements }}</div></div>
+  </div>
+  <p class="source">Source: uploaded bid documents; {{ job.reference.spec.name }} (modified {{ (job.reference.spec.modified or '')[:10] }}); {{ (job.reference.register or {}).name or 'blank register' }}.{% if r.ai_mode == 'replay' %} <strong>Replay mode: AI results are saved test outputs, not read from these documents.</strong>{% endif %}</p>
+  <div class="downloads">
+    <a class="btn" href="/jobs/{{ job.id }}/files/{{ r.files.memo }}">Download Go/No-Go memo (.docx)</a>
+    <a class="btn secondary" href="/jobs/{{ job.id }}/files/{{ r.files.matrix }}">Download matrix (.xlsx)</a>
+  </div>
+</section>
+
+<section class="card">
+  <div class="eyebrow">Gates</div>
+  <h2>Gate results</h2>
+  <table class="data">
+    <thead><tr><th>Gate</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>1. Eligibility (SLCC)</td><td><span class="tag {{ r.gates.gate1 | verdict_class }}">{{ r.gates.gate1 }}</span></td></tr>
+      <tr><td>2. Delivery lead time</td><td><span class="tag {{ r.gates.gate2 | verdict_class }}">{{ r.gates.gate2 }}</span></td></tr>
+      <tr><td>3. Data center compliance</td><td><span class="tag {{ r.gates.gate3 | verdict_class }}">{{ r.gates.gate3 }}</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <div class="eyebrow">Site fit</div>
+  <h2>Sites ranked</h2>
+  <div class="scroll">
+  <table class="data">
+    <thead><tr><th>Site</th><th>Fit</th><th class="num">Comply</th><th class="num">Partial</th><th class="num">Clarify</th><th class="num">Unverified</th><th class="num">Gap</th><th>Gap clauses</th></tr></thead>
+    <tbody>
+    {% for f in r.site_fit %}
+      <tr><td>{{ f.site }}{% if f.site == r.recommended_site %} <span class="small">(recommended)</span>{% endif %}</td>
+        <td><span class="tag {{ f.fit | verdict_class }}">{{ f.fit }}</span></td>
+        {% for k in ['Comply','Partial','Clarify','Unverified','Gap'] %}<td class="num">{{ f.counts.get(k, 0) }}</td>{% endfor %}
+        <td class="mono">{{ f.gaps | join(', ') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="source">Source: {{ job.reference.spec.name }}. Ranked by gaps, then Comply count. Ratings are drafts until a reviewer signs off each row in the matrix.</p>
+</section>
+
+{% if r.flags %}
+<section class="card">
+  <div class="eyebrow">Flags</div>
+  <h2>For the bid decision</h2>
+  <table class="data">
+    <thead><tr><th>Flag</th><th>Reference</th></tr></thead>
+    <tbody>{% for f in r.flags %}<tr><td>{{ f.flag }}</td><td class="mono">{{ f.reference }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

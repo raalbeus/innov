@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ app_name }}{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <div class="eyebrow">VITRO Data Centers</div>
+    <div class="brand-name">Bid Qualification</div>
+  </div>
+  {% if user %}
+  <form method="post" action="/logout" class="who">
+    <span>{{ user }}</span>
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="btn-link" type="submit">Sign out</button>
+  </form>
+  {% endif %}
+</header>
+{% for w in warnings %}<div class="notice amber"><strong>Test mode.</strong> {{ w }}</div>{% endfor %}
+<main>{% block content %}{% endblock %}</main>
+<footer>VITRO Data Centers · A PLDT Group Company · Confidential · Internal use only</footer>
+</body>
+</html>

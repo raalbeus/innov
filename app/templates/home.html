@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div class="eyebrow">Reference folder</div>
+  {% if ref.ok %}
+  <h2>Connected</h2>
+  <p class="muted">{{ ref.location }}</p>
+  <table class="data">
+    <thead><tr><th>Evidence</th><th>File in use</th><th>Modified</th></tr></thead>
+    <tbody>
+      <tr><td>Specifications Table</td><td>{{ ref.spec.name }}</td><td class="num">{{ (ref.spec.modified or '')[:10] }}</td></tr>
+      <tr><td>Reference Register</td>
+        <td>{% if ref.register %}{{ ref.register.name }}{% else %}<span class="tag amber">Not found</span> blank template used: SLCC, lead times, distances and personnel will be unverified{% endif %}</td>
+        <td class="num">{{ ((ref.register or {}).modified or '')[:10] }}</td></tr>
+    </tbody>
+  </table>
+  <p class="source">The latest file in the folder is used for every run and recorded with the results.</p>
+  {% else %}
+  <h2>Not connected</h2>
+  <div class="notice red" role="alert">{{ ref.error }}</div>
+  <p class="muted">{{ ref.location }}</p>
+  {% endif %}
+  {% if note %}<div class="notice green" role="status">{{ note }}</div>{% endif %}
+  {% if admin %}
+  <form method="post" action="/reference" enctype="multipart/form-data" class="admin-upload">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="ref-kind">Replace a reference file (administrators)</label>
+    <select id="ref-kind" name="kind">
+      <option value="spec">VITRO Specifications Table</option>
+      <option value="register">VITRO Reference Register</option>
+    </select>
+    <input id="ref-file" name="file" type="file" accept=".xlsx" required>
+    <button class="btn secondary" type="submit">Upload</button>
+    <p class="source">The newest file in the folder is used, so earlier versions stay as a record.</p>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="eyebrow">New bid</div>
+  <h2>Qualify a bid</h2>
+  <p class="muted">Upload every document in the package: bidding documents, annexes and terms of reference (scanned is fine), and every bid bulletin. PDF only, up to {{ max_mb }} MB in total.</p>
+  <form method="post" action="/jobs" enctype="multipart/form-data" id="upload-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="title">Name (optional)</label>
+    <input id="title" name="title" maxlength="120" placeholder="e.g. BI Business Continuity Facility">
+    <label for="files">Bid documents</label>
+    <input id="files" name="files" type="file" accept="application/pdf,.pdf" multiple required>
+    <ul id="file-list" class="files"></ul>
+    <button class="btn" type="submit" {% if not ref.ok %}disabled{% endif %}>Start qualification</button>
+    {% if not ref.ok %}<p class="small">Available once the reference folder is connected.</p>{% endif %}
+  </form>
+</section>
+
+<section class="card">
+  <div class="eyebrow">History</div>
+  <h2>Your runs</h2>
+  {% if jobs %}
+  <table class="data">
+    <thead><tr><th>Bid</th><th>Started</th><th>Status</th><th>Recommendation</th></tr></thead>
+    <tbody>
+    {% for j in jobs %}
+      <tr>
+        <td><a href="/jobs/{{ j.id }}">{{ j.title }}</a></td>
+        <td class="num">{{ j.created | ts }}</td>
+        <td>{{ j.status }}</td>
+        <td>{% if j.result %}<span class="tag {{ j.result.verdict | verdict_class }}">{{ j.result.verdict }}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">No runs yet.</p>{% endif %}
+</section>
+{% endblock %}

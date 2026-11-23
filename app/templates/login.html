@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sign in · {{ app_name }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <div class="eyebrow">Sign in</div>
+  <h1>Use your company email</h1>
+  <p class="muted">We will email you a 6-digit code. Only {% for d in domains %}@{{ d }}{% if not loop.last %}, {% endif %}{% endfor %} addresses can sign in.</p>
+  {% if error %}<div class="notice red" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/login">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="email">Email address</label>
+    <input id="email" name="email" type="email" autocomplete="email" required value="{{ email or '' }}" placeholder="name@{{ domains[0] }}">
+    <button class="btn" type="submit">Send code</button>
+  </form>
+</section>
+{% endblock %}
