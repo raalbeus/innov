@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Review table · {{ app_name }}{% endblock %}
+{% block content %}
+{% set sm = s.summary %}
+<section class="card">
+  <div class="eyebrow">Step 2 of 3 · Review</div>
+  <h1>{{ s.name }}</h1>
+  <p class="muted">Check that this is the current table before you use it.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-label">Sites</div><div class="kpi-value">{{ sm.sites | length }}</div></div>
+    <div class="kpi"><div class="kpi-label">Specification rows</div><div class="kpi-value">{{ sm.rows }}</div></div>
+    <div class="kpi"><div class="kpi-label">Sections</div><div class="kpi-value">{{ sm.sections | length }}</div></div>
+    <div class="kpi"><div class="kpi-label">Uploaded</div><div class="kpi-value small-value">{{ s.uploaded | ts }}</div></div>
+  </div>
+  <p class="source">Source: {{ s.name }}, sheet "{{ sm.sheet }}"; {{ s.source }} by {{ s.uploaded_by }}; SHA-256 <span class="mono">{{ s.sha256[:16] }}</span>. <a href="/spec/{{ s.id }}/file">Download this file</a></p>
+  {% if confirmed %}
+  <a class="btn" href="/bid">Continue to step 3</a>
+  {% else %}
+  <form method="post" action="/spec/{{ s.id }}/confirm">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="btn" type="submit">Use this table and continue</button>
+    <a class="btn secondary" href="/spec">Choose another</a>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="eyebrow">Sites</div>
+  <h2>Sites found in the table</h2>
+  <div class="scroll">
+  <table class="data">
+    <thead><tr><th>Site</th><th>City</th><th>Ownership</th><th class="num">Rows with data</th><th class="num">Blank rows</th></tr></thead>
+    <tbody>
+    {% for st in sm.sites %}
+      <tr><td>{{ st.name }}</td><td>{{ st.city or '-' }}</td><td>{{ st.ownership or '-' }}</td>
+        <td class="num">{{ st.filled }}</td>
+        <td class="num">{{ st.blank }}{% if st.blank > sm.rows / 2 %} <span class="tag amber">mostly blank</span>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="source">Source: {{ s.name }}. A blank cell is treated as unverified, never as available. A site with more than half its requirements unverified is not recommended.</p>
+</section>
+
+<section class="card">
+  <div class="eyebrow">Sections</div>
+  <h2>Rows by section</h2>
+  <table class="data">
+    <thead><tr><th>Section</th><th class="num">Rows</th></tr></thead>
+    <tbody>{% for sec in sm.sections %}<tr><td>{{ sec.name }}</td><td class="num">{{ sec.rows }}</td></tr>{% endfor %}</tbody>
+  </table>
+  <p class="source">Source: {{ s.name }}.</p>
+</section>
+{% endblock %}

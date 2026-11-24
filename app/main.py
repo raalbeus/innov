@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import auth, config, db, mailer, pipeline, refsource
+from . import auth, config, db, mailer, pipeline, refsource, specstore
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("bidapp")
@@ -40,7 +40,7 @@ def verdict_class(v):
         return "green"
     if v in ("No-Go", "Fail", "Gap"):
         return "red"
-    if v in ("Partner scope", "N/A", None, ""):
+    if v in ("Partner scope", "N/A", "Not required", None, ""):
         return "neutral"
     return "amber"
 
@@ -151,59 +151,151 @@ def logout(request: Request, csrf: str = Form("")):
 
 
 # ------------------------------------------------------------------ app
+# Flow: 1 sign in -> 2 confirm a Specifications Table -> 3 upload the bid documents.
+def confirmed_spec(request):
+    """The Specifications Table this user confirmed in step 2, or None."""
+    spec = specstore.get(request.session.get("spec_id"))
+    if not spec:
+        request.session.pop("spec_id", None)
+    return spec
+
+
 @app.get("/home", response_class=HTMLResponse)
 def home(request: Request):
     user = require_user(request)
-    return page(request, "home.html", ref=refsource.status(), jobs=db.jobs_for(user),
-                max_mb=config.MAX_UPLOAD_MB, admin=auth.is_admin(user) and config.SOURCE_MODE == "local",
+    return page(request, "home.html", step=1, spec=confirmed_spec(request), jobs=db.jobs_for(user),
                 note=request.session.pop("note", None))
 
 
+@app.get("/spec", response_class=HTMLResponse)
+def spec_page(request: Request):
+    """Step 2: upload a Specifications Table or reuse a recent one."""
+    require_user(request)
+    ref = refsource.status()
+    return page(request, "spec.html", step=2, spec=confirmed_spec(request), recent=db.specs_recent(5), ref=ref,
+                max_mb=specstore.MAX_SPEC_MB, note=request.session.pop("note", None),
+                error=request.session.pop("spec_error", None))
+
+
+@app.post("/spec")
+async def spec_upload(request: Request, file: UploadFile = File(...), csrf: str = Form("")):
+    user = require_user(request)
+    require_csrf(request, csrf)
+    data = await file.read(specstore.MAX_SPEC_MB * 1024 * 1024 + 1)
+    try:
+        spec = specstore.add(data, file.filename, user)
+    except specstore.SpecError as e:
+        db.audit(user, "spec_rejected", {"file": specstore.safe_name(file.filename), "reason": str(e)})
+        request.session["spec_error"] = str(e)
+        return RedirectResponse("/spec", status_code=303)
+    db.audit(user, "spec_uploaded", {"spec": spec["id"], "file": spec["name"], "sha256": spec["sha256"]})
+    return RedirectResponse(f"/spec/{spec['id']}", status_code=303)
+
+
+@app.post("/spec/import")
+def spec_import(request: Request, csrf: str = Form("")):
+    """Use the latest Specifications Table in the reference folder (it is copied and checked like an upload)."""
+    user = require_user(request)
+    require_csrf(request, csrf)
+    st = refsource.status()
+    if not st.get("spec"):
+        raise HTTPException(404, "There is no Specifications Table in the reference folder.")
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        f = refsource.fetch(st["spec"], Path(tmp))
+        try:
+            spec = specstore.add(f.read_bytes(), f.name, user, source="reference folder")
+        except specstore.SpecError as e:
+            request.session["spec_error"] = f"{st['spec']['name']}: {e}"
+            return RedirectResponse("/spec", status_code=303)
+    db.audit(user, "spec_imported", {"spec": spec["id"], "file": spec["name"]})
+    return RedirectResponse(f"/spec/{spec['id']}", status_code=303)
+
+
+@app.get("/spec/{spec_id}", response_class=HTMLResponse)
+def spec_review(request: Request, spec_id: str):
+    """Summary of a table for the user to check before confirming it."""
+    require_user(request)
+    spec = specstore.get(spec_id)
+    if not spec:
+        raise HTTPException(404, "Not found.")
+    current = confirmed_spec(request)
+    return page(request, "spec_review.html", step=2, s=spec, confirmed=bool(current and current["id"] == spec_id))
+
+
+@app.post("/spec/{spec_id}/confirm")
+def spec_confirm(request: Request, spec_id: str, csrf: str = Form("")):
+    user = require_user(request)
+    require_csrf(request, csrf)
+    spec = specstore.get(spec_id)
+    if not spec:
+        raise HTTPException(404, "Not found.")
+    request.session["spec_id"] = spec_id
+    db.audit(user, "spec_confirmed", {"spec": spec_id, "file": spec["name"]})
+    return RedirectResponse("/bid", status_code=303)
+
+
+@app.get("/spec/{spec_id}/file")
+def spec_file(request: Request, spec_id: str):
+    user = require_user(request)
+    spec = specstore.get(spec_id)
+    if not spec:
+        raise HTTPException(404, "Not found.")
+    db.audit(user, "spec_download", {"spec": spec_id})
+    return FileResponse(specstore.path_of(spec), filename=spec["name"])
+
+
+@app.get("/bid", response_class=HTMLResponse)
+def bid_page(request: Request):
+    """Step 3: upload the bid documents. Locked until a Specifications Table is confirmed."""
+    user = require_user(request)
+    spec = confirmed_spec(request)
+    if not spec:
+        request.session["note"] = "Confirm a Specifications Table before uploading the bid documents."
+        return RedirectResponse("/spec", status_code=303)
+    return page(request, "bid.html", step=3, spec=spec, ref=refsource.status(), max_mb=config.MAX_UPLOAD_MB,
+                admin=auth.is_admin(user) and config.SOURCE_MODE == "local", note=request.session.pop("note", None))
+
+
 @app.post("/reference")
-async def upload_reference(request: Request, kind: str = Form(...), file: UploadFile = File(...),
-                           csrf: str = Form("")):
-    """Admins replace the Specifications Table or Reference Register (local reference folder only)."""
+async def upload_reference(request: Request, file: UploadFile = File(...), csrf: str = Form("")):
+    """Admins replace the Reference Register (local reference folder only)."""
     user = require_user(request)
     require_csrf(request, csrf)
     if not auth.is_admin(user) or config.SOURCE_MODE != "local":
-        raise HTTPException(403, "Only administrators can change the reference files.")
-    pattern = {"spec": config.SPEC_PATTERN, "register": config.REGISTER_PATTERN}.get(kind)
-    if not pattern:
-        raise HTTPException(400, "Unknown reference file type.")
-    name = re.sub(r"[^A-Za-z0-9._ ()-]+", "_", Path(file.filename or "").name)[:120]
+        raise HTTPException(403, "Only administrators can change the Reference Register.")
+    name = specstore.safe_name(file.filename)
     data = await file.read()
     if not name.lower().endswith(".xlsx") or not data.startswith(b"PK"):
-        raise HTTPException(400, "Upload the reference file as an Excel .xlsx file.")
-    if not name.lower().startswith(pattern.lower()):
-        raise HTTPException(400, f"The file name must start with {pattern} so the app can find it.")
-    import subprocess, sys, tempfile
+        raise HTTPException(400, "Upload the Reference Register as an Excel .xlsx file.")
+    if not name.lower().startswith(config.REGISTER_PATTERN.lower()):
+        raise HTTPException(400, f"The file name must start with {config.REGISTER_PATTERN} so the app can find it.")
+    import tempfile
+    from openpyxl import load_workbook
     with tempfile.TemporaryDirectory() as tmp:
         f = Path(tmp) / name
         f.write_bytes(data)
-        script = "read_specs.py" if kind == "spec" else None
-        if script:
-            r = subprocess.run([sys.executable, str(config.SCRIPTS_DIR / script), str(f), tmp], cwd=config.SCRIPTS_DIR,
-                               capture_output=True, text=True, timeout=300)
-            if r.returncode != 0 or " 0 spec rows" in r.stdout or r.stdout.startswith("0 sites"):
-                raise HTTPException(400, "This file could not be read as the VITRO Specifications Table.")
-        else:
-            from openpyxl import load_workbook
-            try:
-                load_workbook(f, read_only=True)
-            except Exception:
-                raise HTTPException(400, "This file could not be read as an Excel workbook.")
-        config.LOCAL_REF_DIR.mkdir(parents=True, exist_ok=True)
-        (config.LOCAL_REF_DIR / name).write_bytes(data)
-    db.audit(user, "reference_uploaded", {"kind": kind, "file": name})
-    request.session["note"] = f"{name} is now in use."
-    return RedirectResponse("/home", status_code=303)
+        try:
+            load_workbook(f, read_only=True)
+        except Exception:
+            raise HTTPException(400, "This file could not be read as an Excel workbook.")
+    config.LOCAL_REF_DIR.mkdir(parents=True, exist_ok=True)
+    (config.LOCAL_REF_DIR / name).write_bytes(data)
+    db.audit(user, "reference_uploaded", {"kind": "register", "file": name})
+    request.session["note"] = f"{name} is now the Reference Register."
+    return RedirectResponse("/bid", status_code=303)
 
 
 @app.post("/jobs")
 async def create_job(request: Request, files: list[UploadFile] = File(...), title: str = Form(""),
-                     csrf: str = Form("")):
+                     csrf: str = Form(""), spec_id: str = Form("")):
     user = require_user(request)
     require_csrf(request, csrf)
+    spec = confirmed_spec(request)
+    if not spec:
+        raise HTTPException(409, "Confirm a Specifications Table (step 2) before starting a qualification.")
+    if spec_id and spec_id != spec["id"]:
+        raise HTTPException(409, "The Specifications Table changed in another tab. Reload this page and try again.")
     job_id = time.strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(3)
     up = config.DATA_DIR / "jobs" / job_id / "upload"
     up.mkdir(parents=True, exist_ok=True)
@@ -223,8 +315,8 @@ async def create_job(request: Request, files: list[UploadFile] = File(...), titl
     if not saved:
         raise HTTPException(400, "Upload the bid documents as PDF files.")
     db.job_create(job_id, user, title.strip()[:120] or saved[0])
-    db.audit(user, "job_started", {"job": job_id, "files": saved})
-    executor.submit(pipeline.run, job_id, user, up, title.strip())
+    db.audit(user, "job_started", {"job": job_id, "files": saved, "spec": spec["id"]})
+    executor.submit(pipeline.run, job_id, user, up, title.strip(), spec)
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 

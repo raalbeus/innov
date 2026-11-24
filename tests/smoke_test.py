@@ -1,7 +1,7 @@
 """End-to-end test in local modes: console OTP, local reference folder, replay AI.
 
 Run:  python3 tests/smoke_test.py /path/to/bid/pdfs
-Checks sign-in rules, upload, the full pipeline, results and downloads, and access control.
+Checks sign-in rules, step 2 (Specifications Table from the reference folder), the full pipeline, results and downloads, and access control.
 """
 import os
 import re
@@ -86,7 +86,7 @@ check("Incorrect code" in r.text, "wrong code refused with attempts left")
 r = c.post("/verify", data={"code": sent["a.user@vitrodc.com"], "csrf": tok}, follow_redirects=False)
 check(r.status_code == 303 and r.headers["location"] == "/home", "correct code signs in")
 r = c.get("/home")
-check("Connected" in r.text and "VITRO_Specifications_Table_02192026_4.xlsx" in r.text, "home shows reference folder and spec file")
+check("Continue to step 2" in r.text, "home points to step 2 (Specifications Table)")
 check("Test mode" in r.text, "test-mode banner shown")
 
 # code reuse and lockout on a second client
@@ -105,28 +105,21 @@ for _ in range(4):
     r = c2.post("/login", data={"email": "c.user@vitrodc.com", "csrf": csrf_of(r.text)})
 check("Too many codes" in r.text, "4th code request within 15 minutes is refused")
 
-print("Allow-list and admin upload")
+print("Allow-list and step 2")
 c3 = TestClient(main.app)
 sign_in(c3, "listed.person@gmail.com")
 check(True, "allow-listed personal address signs in")
-r = c3.get("/home")
-check("Replace a reference file" in r.text, "admin sees the reference upload form")
-tok3 = csrf_of(r.text)
-bad = c3.post("/reference", data={"kind": "spec", "csrf": tok3}, files={"file": ("notes.txt", b"hello", "text/plain")})
-check(bad.status_code == 400, "non-xlsx reference upload refused")
-bad = c3.post("/reference", data={"kind": "spec", "csrf": tok3}, files={"file": ("Other_Name.xlsx", SPEC.read_bytes(), "application/octet-stream")})
-check(bad.status_code == 400, "reference file with the wrong name refused")
-new_name = SPEC.name.replace(".xlsx", "_v2.xlsx")
-r = c3.post("/reference", data={"kind": "spec", "csrf": tok3}, files={"file": (new_name, SPEC.read_bytes(), "application/octet-stream")}, follow_redirects=True)
-check(new_name in r.text and "is now in use" in r.text, "admin upload of the Specifications Table is used")
-r = c.get("/home")
-check("Replace a reference file" not in r.text, "non-admin does not see the upload form")
-check(c.post("/reference", data={"kind": "spec", "csrf": csrf_of(r.text)}, files={"file": (new_name, SPEC.read_bytes(), "application/octet-stream")}).status_code == 403,
-      "non-admin upload refused")
+r = c.get("/spec")
+check(SPEC.name in r.text, "reference folder table offered in step 2")
+r = c.post("/spec/import", data={"csrf": csrf_of(r.text)}, follow_redirects=False)
+check(r.status_code == 303 and r.headers["location"].startswith("/spec/"), "reference folder table imported")
+review = r.headers["location"]
+r = c.post(review + "/confirm", data={"csrf": csrf_of(c.get(review).text)}, follow_redirects=False)
+check(r.headers["location"] == "/bid", "table confirmed, step 3 open")
 
 if pdf_dir:
     print("Bid run (replay AI)")
-    r = c.get("/home")
+    r = c.get("/bid")
     files = [("files", (p.name, p.read_bytes(), "application/pdf")) for p in sorted(pdf_dir.glob("*.pdf"))]
     r = c.post("/jobs", data={"title": "BI BCF test", "csrf": csrf_of(r.text)}, files=files, follow_redirects=False)
     check(r.status_code == 303 and r.headers["location"].startswith("/jobs/"), "upload accepted, job created")
@@ -149,7 +142,7 @@ if pdf_dir:
     check(c2.get(job_url).status_code == 404 and c2.get(links[0]).status_code == 404,
           "another user cannot see the run or its files")
     check(c.get(job_url + "/files/..%2Fapp.db").status_code == 404, "file path outside the run refused")
-    bad = c.post("/jobs", data={"csrf": csrf_of(c.get("/home").text)},
+    bad = c.post("/jobs", data={"csrf": csrf_of(c.get("/bid").text)},
                  files=[("files", ("x.pdf", b"not a pdf", "application/pdf"))])
     check(bad.status_code == 400, "non-PDF content refused")
 

@@ -22,7 +22,20 @@
   {% endif %}
 </header>
 {% for w in warnings %}<div class="notice amber"><strong>Test mode.</strong> {{ w }}</div>{% endfor %}
-<main>{% block content %}{% endblock %}</main>
+<main>
+{% if user and step %}
+<nav class="steps" aria-label="Qualification steps">
+  <ol>
+    <li class="done"><span class="n">1</span> Signed in</li>
+    <li class="{{ 'current' if step == 2 else ('done' if spec else 'todo') }}" {% if step == 2 %}aria-current="step"{% endif %}>
+      <a href="/spec"><span class="n">2</span> Specifications Table</a></li>
+    <li class="{{ 'current' if step == 3 else ('todo' if spec else 'locked') }}" {% if step == 3 %}aria-current="step"{% endif %}>
+      {% if spec %}<a href="/bid"><span class="n">3</span> Bid documents</a>{% else %}<span class="n">3</span> Bid documents <span class="small">(locked)</span>{% endif %}</li>
+  </ol>
+</nav>
+{% endif %}
+{% block content %}{% endblock %}
+</main>
 <footer>VITRO Data Centers · A PLDT Group Company · Confidential · Internal use only</footer>
 </body>
 </html>

@@ -1,6 +1,6 @@
 """The bid qualification job: same steps as the bid-qualify skill.
 
- 1 reference folder   latest Specifications Table + Reference Register
+ 1 reference files    Specifications Table confirmed by the user + latest Reference Register
  2 extract            per-page text, images of scanned pages (extract_bid.py)
  3 specifications     SPEC-<row> evidence per site (read_specs.py)
  4 bid terms          Claude: ABC, deadline, SLCC, delivery, subcontracting, flags
@@ -11,6 +11,7 @@
  9 memo               memo built from the validated results, build_memo.py
 """
 import collections
+import datetime as dt
 import json
 import logging
 import re
@@ -21,7 +22,7 @@ import traceback
 
 from openpyxl import load_workbook
 
-from . import ai, config, db, refsource
+from . import ai, config, db, refsource, specstore
 
 log = logging.getLogger("bidapp.pipeline")
 PAGES_PER_CALL = 8
@@ -157,7 +158,7 @@ def build_memo_json(v, owner, ref):
                + ("; ".join(reasons) if reasons else "all three gates pass with cited evidence") + "." + site_line)
     spec = ref.get("spec", {}) or {}
     src = (f"Source: bid documents listed in the matrix; {spec.get('name', 'Specifications Table')} "
-           f"(modified {str(spec.get('modified', ''))[:10]}); Reference Register "
+           f"(uploaded {str(spec.get('modified', ''))[:10]}); Reference Register "
            f"{(ref.get('register') or {}).get('name', '(none; blank template used)')}.")
 
     gate_rows = [
@@ -218,7 +219,7 @@ def build_memo_json(v, owner, ref):
 
 
 # ------------------------------------------------------------------ job
-def run(job_id, owner, upload_dir, title):
+def run(job_id, owner, upload_dir, title, spec):
     work = config.DATA_DIR / "jobs" / job_id
     out_dir = work / "output"
     for d in (work, out_dir):
@@ -229,20 +230,21 @@ def run(job_id, owner, upload_dir, title):
         log.info("[%s] %s", job_id, name)
 
     try:
-        # 1 reference folder
-        step("Reading the reference folder", 3)
+        # 1 reference files: the Specifications Table confirmed in step 2, the latest Reference Register
+        step("Reading the reference files", 3)
+        spec_path = specstore.copy_to(spec, work / "ref")
         st = refsource.status()
-        if not st["ok"]:
-            raise JobError(st["error"])
-        spec_path = refsource.fetch(st["spec"], work / "ref")
         if st.get("register"):
             reg_path = refsource.fetch(st["register"], work / "ref")
         else:
             reg_path = work / "ref" / "blank_register.xlsx"
             shutil.copy2(config.BLANK_REGISTER, reg_path)
         ref = {"location": st["location"],
-               "spec": {k: st["spec"].get(k) for k in ("name", "modified", "web_url")},
-               "register": {k: st["register"].get(k) for k in ("name", "modified", "web_url")} if st.get("register") else None}
+               "spec": {"id": spec["id"], "name": spec["name"], "sha256": spec["sha256"], "source": spec["source"],
+                        "uploaded_by": spec["uploaded_by"],
+                        "modified": dt.datetime.fromtimestamp(spec["uploaded"]).isoformat(timespec="seconds")},
+               "register": {k: st["register"].get(k) for k in ("name", "modified", "web_url")} if st.get("register") else None,
+               "register_error": st.get("error")}
         db.job_update(job_id, reference=ref)
 
         # 2 extract
@@ -329,6 +331,8 @@ def run(job_id, owner, upload_dir, title):
                                                   "bid_deadline", "delivery_days")},
             "counts": {"requirements": len(reqs), "downgraded": len(val.get("downgraded", []))},
             "files": {"matrix": matrix.name, "memo": memo.name},
+            "areas": dc_areas(v.get("requirements", []), val.get("recommended_site")),
+            "clarifications": clarifications(v.get("requirements", []), val.get("recommended_site")),
             "ai_mode": config.AI_MODE,
         }
         db.job_update(job_id, status="done", step="Done", progress=100, result=result,
@@ -339,6 +343,51 @@ def run(job_id, owner, upload_dir, title):
         msg = str(e) if isinstance(e, (JobError, ai.AIError)) else f"Unexpected error: {e}"
         db.job_update(job_id, status="failed", error=msg)
         db.audit(owner, "job_failed", {"job": job_id, "error": msg[:500]})
+
+
+# Gate 3 areas, in the order of the Solutions team's review steps.
+AREAS = [("Colocation", ["Colocation", "Facility rating", "Security", "Service levels"]),
+         ("DR seats", ["DR seats"]),
+         ("Office space", ["Office space"]),
+         ("Connectivity", ["Connectivity"]),
+         ("Additional requirements", ["Certifications", "Personnel", "Other"])]
+
+
+def _site_rating(r, site):
+    if r.get("scope") == "VITRO DC" and site and site in (r.get("sites") or {}):
+        return r["sites"][site].get("rating", "Unverified")
+    return r.get("rating", "Unverified")
+
+
+def dc_areas(reqs, site):
+    """Gate 3 rating counts per review area, for the recommended site (or the overall rating)."""
+    out = []
+    for area, cats in AREAS:
+        rows = [r for r in reqs if r.get("category") in cats and r.get("scope") in ("VITRO DC", "Bidder (general)")
+                and r.get("mandatory", True)]
+        c = collections.Counter(_site_rating(r, site) for r in rows)
+        if not rows:
+            res = "Not required"
+        elif c["Gap"]:
+            res = "Gap"
+        elif c["Clarify"] or c["Partial"] or c["Unverified"]:
+            res = "Needs review"
+        else:
+            res = "Comply"
+        out.append({"area": area, "result": res, "n": len(rows), "counts": dict(c)})
+    return out
+
+
+def clarifications(reqs, site):
+    """Items to raise at the Pre-Bid Conference or by written clarification."""
+    out = []
+    for r in reqs:
+        ratings = {r.get("rating")} | {s.get("rating") for s in (r.get("sites") or {}).values()}
+        q = (r.get("clarification") or "").strip()
+        if q and "Clarify" in ratings:
+            out.append({"id": r["id"], "clause": r.get("clause") or "", "doc": r.get("doc") or "",
+                        "category": r.get("category") or "", "question": q})
+    return out
 
 
 def ai_steps(job_id, work, manifest, specs_md, reg_path, sites, step):
