@@ -71,7 +71,8 @@ python3 tests/make_sample_fixtures.py data/sample
 AI_MODE=replay REPLAY_DIR=data/sample/replay MAIL_MODE=console COOKIE_SECURE=false SOURCE_MODE=local \
 SESSION_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))') python3 -m uvicorn app.main:app --port 8000
 ```
-Upload `data/sample/SAMPLE_Specifications_Table.xlsx` in step 2. Replay results are fixed test outputs: they
+Upload `data/sample/SAMPLE_Specifications_Table.xlsx` in step 2. In a codespace, `AI_MODE=replay ./run-codespace.sh`
+does the same in one command (no API key needed). Replay results are fixed test outputs: they
 do not read the uploaded PDFs.
 
 ## Sign-in rules
