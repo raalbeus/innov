@@ -2,8 +2,14 @@
 
 INTERNAL. Web app for the VITRO Data Centers Solutions team.
 
-Staff sign in with an email one-time code. The app qualifies an uploaded Philippine government bid package
-(bidding documents, scanned annexes, bulletins) and returns:
+The app works in three steps:
+1. **Sign in** with a company address (@vitrodc.com) or an address on the allow-list, using an email one-time code.
+2. **Specifications Table.** Upload the current VITRO Specifications Table (.xlsx), or reuse a recent one. The
+   app checks the file, shows its sites and rows, and the user confirms it. Step 3 stays locked until then.
+3. **Bid documents.** Upload the Philippine government bid package (bidding documents, scanned annexes,
+   bulletins). The run is rated against the table confirmed in step 2, and the table is recorded with the run.
+
+It returns:
 - a Go/No-Go inter-office memo (.docx)
 - a compliance and site-fit matrix (.xlsx)
 
@@ -27,10 +33,10 @@ A codespace runs the app in your browser on GitHub, private to you. Nothing is i
    If it does not, open the Ports tab and click the globe icon next to port 8000.
 4. **Sign in.** Enter your email. In this sandbox the code is printed in the terminal ("DEV MODE sign-in
    code") instead of emailed. Enter it on the page.
-5. **Upload the reference files.** On the home page, as an admin, choose "VITRO Specifications Table"
-   and upload `VITRO_Specifications_Table_*.xlsx`. Upload the Reference Register the same way when it is
-   filled (file name must start with `VITRO_Reference_Register`).
-6. **Qualify a bid.** Upload all PDFs of the bid package and start. A large scanned tender takes several
+5. **Specifications Table (step 2).** Upload `VITRO_Specifications_Table_*.xlsx`, check the summary and click
+   "Use this table and continue". Admins can upload the filled Reference Register on the step 3 page (file
+   name must start with `VITRO_Reference_Register`).
+6. **Qualify a bid (step 3).** Upload all PDFs of the bid package and start. A large scanned tender takes several
    minutes. Download the memo and matrix from the results page.
 
 Keep port 8000 **Private** (the default). Codespaces stop after inactivity; the data in `data/` stays in
@@ -57,11 +63,24 @@ banner while one is active:
 | `AI_MODE` | `claude` | `replay`: saved outputs, for testing without an API key |
 | `COOKIE_SECURE` | `true` | `false` only for plain http on localhost |
 
+## Testing without confidential data
+`python3 tests/flow_test.py` runs sign-in, step 2, step 3 and a full run in replay mode on invented data
+(sites "SAMPLE Site A/B/C"). To click through the app yourself, write the sample files and start in replay mode:
+```bash
+python3 tests/make_sample_fixtures.py data/sample
+AI_MODE=replay REPLAY_DIR=data/sample/replay MAIL_MODE=console COOKIE_SECURE=false SOURCE_MODE=local \
+SESSION_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))') python3 -m uvicorn app.main:app --port 8000
+```
+Upload `data/sample/SAMPLE_Specifications_Table.xlsx` in step 2. Replay results are fixed test outputs: they
+do not read the uploaded PDFs.
+
 ## Sign-in rules
 - Allowed: @vitrodc.com addresses (`ALLOWED_DOMAINS`), plus addresses in `ALLOWED_EMAILS`.
 - 6-digit code, valid 10 minutes, single use.
 - 5 wrong entries lock the code; at most 3 codes per address per 15 minutes.
-- Sessions last 8 hours. Users see only their own runs. Sign-ins, runs, uploads and downloads go to an audit log.
+- Sessions last 8 hours. Users see only their own runs. Sign-ins, table uploads and confirmations, runs and
+  downloads go to an audit log.
+- Any signed-in user can upload a Specifications Table; every user confirms a table for their own session.
 
 ## Layout
 | Path | Purpose |
@@ -69,7 +88,9 @@ banner while one is active:
 | `app/` | Web app: routes, sign-in, mail, SharePoint, Claude calls, job pipeline, pages |
 | `engine/` | Bid qualification scripts and templates (extract, read specs, gates, matrix, memo) |
 | `skill/` | The same process as a Claude skill (`/bid-qualify`) for use in claude.ai |
-| `tests/smoke_test.py` | End-to-end test (needs the confidential fixtures, which are not in the repository) |
+| `tests/flow_test.py` | End-to-end test of the three-step flow on SAMPLE data: `python3 tests/flow_test.py [pdf_dir]` |
+| `tests/make_sample_fixtures.py` | Writes a synthetic Specifications Table and replay outputs for sandbox testing |
+| `tests/smoke_test.py` | End-to-end test on the confidential fixtures, which are not in the repository |
 | `.devcontainer/`, `run-codespace.sh` | GitHub Codespaces sandbox |
 | `Dockerfile`, `run.sh` | Production |
 

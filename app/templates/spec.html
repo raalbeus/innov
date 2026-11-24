@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Specifications Table · {{ app_name }}{% endblock %}
+{% block content %}
+{% if note %}<div class="notice amber" role="status">{{ note }}</div>{% endif %}
+{% if error %}<div class="notice red" role="alert">{{ error }}</div>{% endif %}
+<section class="card">
+  <div class="eyebrow">Step 2 of 3</div>
+  <h1>Specifications Table</h1>
+  <p class="muted">The bid is rated site by site against this table. A requirement can be rated Comply only when it cites a cell in it, so use the current version.</p>
+  {% if spec %}
+  <div class="notice green" role="status">In use for your next run: <strong>{{ spec.name }}</strong>. <a href="/spec/{{ spec.id }}">View summary</a> · <a href="/bid">Continue to step 3</a></div>
+  {% endif %}
+  <form method="post" action="/spec" enctype="multipart/form-data" id="spec-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="spec-file">Upload a Specifications Table (.xlsx, up to {{ max_mb }} MB)</label>
+    <input id="spec-file" name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+    <button class="btn" type="submit">Upload and check</button>
+    <p class="source">The file is checked for site columns (row 1, from column H) and specification rows. You review a summary before it is used.</p>
+  </form>
+</section>
+
+<section class="card">
+  <div class="eyebrow">Or reuse</div>
+  <h2>Recent tables</h2>
+  {% if recent %}
+  <div class="scroll">
+  <table class="data">
+    <thead><tr><th>File</th><th>Uploaded</th><th>By</th><th class="num">Sites</th><th class="num">Rows</th><th></th></tr></thead>
+    <tbody>
+    {% for r in recent %}
+      <tr><td>{{ r.name }}{% if loop.first %} <span class="tag neutral">latest</span>{% endif %}</td>
+        <td class="num">{{ r.uploaded | ts }}</td><td>{{ r.uploaded_by }}</td>
+        <td class="num">{{ r.summary.sites | length }}</td><td class="num">{{ r.summary.rows }}</td>
+        <td><a href="/spec/{{ r.id }}">Review</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}<p class="muted">No table has been uploaded yet.</p>{% endif %}
+  {% if ref.spec %}
+  <form method="post" action="/spec/import" class="inline-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <p class="small">Reference folder ({{ ref.location }}) has <strong>{{ ref.spec.name }}</strong>, modified {{ (ref.spec.modified or '')[:10] }}.</p>
+    <button class="btn secondary" type="submit">Use the reference folder table</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

@@ -47,7 +47,7 @@ table.data tbody tr:nth-child(even) td { background: var(--row-alt); }
 .num { text-align: right; }
 .mono { font-family: var(--font-mono); font-size: 12px; }
 .scroll { overflow-x: auto; }
-.tag { display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm); font: 700 12px/18px var(--font-mono); }
+.tag { display: inline-block; white-space: nowrap; padding: 2px 8px; border-radius: var(--radius-sm); font: 700 12px/18px var(--font-mono); }
 .tag.green { background: var(--green-10); color: var(--green); }
 .tag.amber { background: var(--amber-10); color: var(--amber); }
 .tag.red { background: var(--red-10); color: var(--red); }
@@ -88,3 +88,21 @@ table.data tbody tr:nth-child(even) td { background: var(--row-alt); }
 select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; background: var(--white); margin-bottom: 8px; }
 .notice.green { background: var(--green-10); color: var(--green); }
 .admin-upload { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 8px; }
+
+/* Step indicator: 1 sign in, 2 Specifications Table, 3 bid documents */
+.steps ol { list-style: none; display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 24px; padding: 0; }
+.steps li { flex: 1 1 180px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius-md); background: var(--white); font-size: 14px; color: var(--ink-muted); }
+.steps li a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.steps .n { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center;
+  font: 700 12px/1 var(--font-mono); background: var(--cobalt-10); color: var(--cobalt); flex: none; }
+.steps li.current { border-color: var(--cobalt); color: var(--ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--cobalt); }
+.steps li.current .n, .steps li.done .n { background: var(--cobalt); color: var(--white); }
+.steps li.done { color: var(--ink); }
+.steps li.locked { background: var(--surface); }
+.notice.neutral { background: var(--cobalt-10); color: var(--ink); }
+.kpi-value.small-value { font-size: 14px; line-height: 26px; }
+.inline-form { margin-top: 16px; }
+.card > a.btn + a.btn, form .btn + .btn.secondary { margin-left: 8px; }
+ol.questions { padding-left: 20px; }
+ol.questions li { margin-bottom: 10px; }

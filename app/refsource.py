@@ -1,7 +1,8 @@
-"""The reference folder: the VITRO Specifications Table and the Reference Register.
+"""The reference folder: the Reference Register, and optionally a Specifications Table.
 
-The latest file matching each pattern (by modified date) is used and cached
-locally; the file name and modified date are recorded with every job.
+The Reference Register used by a run is the latest matching file (by modified date). The
+Specifications Table is chosen by the user in step 2; a table in this folder is offered there
+as one option. File names and dates are recorded with every job.
 """
 import datetime as dt
 import json
@@ -45,8 +46,7 @@ def status():
     except Exception as e:  # network, permission or configuration problems
         return {"ok": False, "error": f"Cannot read the reference folder: {e}", "location": location()}
     spec, reg = _pick(files, config.SPEC_PATTERN), _pick(files, config.REGISTER_PATTERN)
-    return {"ok": spec is not None, "location": location(), "spec": spec, "register": reg,
-            "error": None if spec else f"No file starting with '{config.SPEC_PATTERN}' found in the folder."}
+    return {"ok": True, "location": location(), "spec": spec, "register": reg, "error": None}
 
 
 def location():

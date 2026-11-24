@@ -1,4 +1,4 @@
-"""SQLite storage: sign-in codes, jobs and the audit log."""
+"""SQLite storage: sign-in codes, Specifications Tables, jobs and the audit log."""
 import json
 import sqlite3
 import threading
@@ -32,6 +32,16 @@ CREATE TABLE IF NOT EXISTS jobs (
   reference TEXT,                -- JSON: spec and register file names and dates used
   result TEXT                    -- JSON: verdict, recommended site, file names
 );
+CREATE TABLE IF NOT EXISTS specs (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,            -- original file name
+  sha256 TEXT NOT NULL,
+  source TEXT NOT NULL,          -- "upload" or "reference folder"
+  uploaded_by TEXT NOT NULL,
+  uploaded REAL NOT NULL,
+  summary TEXT NOT NULL          -- JSON: sites, row counts, blank cells
+);
+CREATE INDEX IF NOT EXISTS specs_sha ON specs(sha256);
 CREATE TABLE IF NOT EXISTS audit (
   ts REAL NOT NULL,
   email TEXT,
@@ -63,6 +73,39 @@ def audit(email, action, detail=None):
     with conn() as c:
         c.execute("INSERT INTO audit(ts, email, action, detail) VALUES (?,?,?,?)",
                   (time.time(), email, action, json.dumps(detail) if detail is not None else None))
+
+
+def spec_add(spec_id, name, sha256, source, uploaded_by, summary):
+    with conn() as c:
+        c.execute("INSERT INTO specs(id, name, sha256, source, uploaded_by, uploaded, summary) VALUES (?,?,?,?,?,?,?)",
+                  (spec_id, name, sha256, source, uploaded_by, time.time(), json.dumps(summary)))
+
+
+def spec_get(spec_id):
+    with conn() as c:
+        r = c.execute("SELECT * FROM specs WHERE id=?", (spec_id,)).fetchone()
+    return _spec(r)
+
+
+def spec_by_sha(sha256, name):
+    with conn() as c:
+        r = c.execute("SELECT * FROM specs WHERE sha256=? AND name=? ORDER BY uploaded DESC LIMIT 1",
+                      (sha256, name)).fetchone()
+    return _spec(r)
+
+
+def specs_recent(limit=5):
+    with conn() as c:
+        rows = c.execute("SELECT * FROM specs ORDER BY uploaded DESC LIMIT ?", (limit,)).fetchall()
+    return [_spec(r) for r in rows]
+
+
+def _spec(r):
+    if r is None:
+        return None
+    d = dict(r)
+    d["summary"] = json.loads(d["summary"])
+    return d
 
 
 def job_create(job_id, owner, title):

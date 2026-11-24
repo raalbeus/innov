@@ -28,7 +28,7 @@
     <div class="kpi"><div class="kpi-label">Bid deadline</div><div class="kpi-value">{{ r.bid.bid_deadline or '-' }}</div></div>
     <div class="kpi"><div class="kpi-label">Requirements</div><div class="kpi-value">{{ r.counts.requirements }}</div></div>
   </div>
-  <p class="source">Source: uploaded bid documents; {{ job.reference.spec.name }} (modified {{ (job.reference.spec.modified or '')[:10] }}); {{ (job.reference.register or {}).name or 'blank register' }}.{% if r.ai_mode == 'replay' %} <strong>Replay mode: AI results are saved test outputs, not read from these documents.</strong>{% endif %}</p>
+  <p class="source">Source: uploaded bid documents; {{ job.reference.spec.name }} (uploaded {{ (job.reference.spec.modified or '')[:10] }}); {{ (job.reference.register or {}).name or 'blank register' }}.{% if r.ai_mode == 'replay' %} <strong>Replay mode: AI results are saved test outputs, not read from these documents.</strong>{% endif %}</p>
   <div class="downloads">
     <a class="btn" href="/jobs/{{ job.id }}/files/{{ r.files.memo }}">Download Go/No-Go memo (.docx)</a>
     <a class="btn secondary" href="/jobs/{{ job.id }}/files/{{ r.files.matrix }}">Download matrix (.xlsx)</a>
@@ -38,15 +38,36 @@
 <section class="card">
   <div class="eyebrow">Gates</div>
   <h2>Gate results</h2>
+  <p class="muted">Checked in order. A failed gate means No-Go regardless of the later gates.</p>
   <table class="data">
-    <thead><tr><th>Gate</th><th>Result</th></tr></thead>
+    <thead><tr><th>Gate</th><th>What is checked</th><th>Result</th></tr></thead>
     <tbody>
-      <tr><td>1. Eligibility (SLCC)</td><td><span class="tag {{ r.gates.gate1 | verdict_class }}">{{ r.gates.gate1 }}</span></td></tr>
-      <tr><td>2. Delivery lead time</td><td><span class="tag {{ r.gates.gate2 | verdict_class }}">{{ r.gates.gate2 }}</span></td></tr>
-      <tr><td>3. Data center compliance</td><td><span class="tag {{ r.gates.gate3 | verdict_class }}">{{ r.gates.gate3 }}</span></td></tr>
+      <tr><td>1. Eligibility (SLCC)</td><td>Bid Data Sheet (BDS) eligibility; a completed contract that meets the Single Largest Completed Contract (SLCC) requirement</td><td><span class="tag {{ r.gates.gate1 | verdict_class }}">{{ r.gates.gate1 }}</span></td></tr>
+      <tr><td>2. Delivery lead time</td><td>Section VI Schedule of Requirements: whether the delivery period is feasible for the scope{% if r.bid.delivery_days %} (required: {{ r.bid.delivery_days }} days){% endif %}</td><td><span class="tag {{ r.gates.gate2 | verdict_class }}">{{ r.gates.gate2 }}</span></td></tr>
+      <tr><td>3. Data center compliance</td><td>Section VII Technical Specifications against the Specifications Table{% if r.recommended_site %}, best-fit site {{ r.recommended_site }}{% endif %}</td><td><span class="tag {{ r.gates.gate3 | verdict_class }}">{{ r.gates.gate3 }}</span></td></tr>
     </tbody>
   </table>
+  <p class="source">Source: uploaded bid documents; Reference Register for gates 1 and 2; {{ job.reference.spec.name }} for gate 3.</p>
 </section>
+
+{% if r.areas %}
+<section class="card">
+  <div class="eyebrow">Gate 3 detail</div>
+  <h2>Data center requirements by area</h2>
+  <div class="scroll">
+  <table class="data">
+    <thead><tr><th>Area</th><th>Result</th><th class="num">Mandatory rows</th><th class="num">Comply</th><th class="num">Partial</th><th class="num">Clarify</th><th class="num">Unverified</th><th class="num">Gap</th></tr></thead>
+    <tbody>
+    {% for a in r.areas %}
+      <tr><td>{{ a.area }}</td><td><span class="tag {{ a.result | verdict_class }}">{{ a.result }}</span></td><td class="num">{{ a.n }}</td>
+        {% for k in ['Comply','Partial','Clarify','Unverified','Gap'] %}<td class="num">{{ a.counts.get(k, 0) }}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="source">Source: matrix ratings{% if r.recommended_site %} for {{ r.recommended_site }}{% endif %}, against {{ job.reference.spec.name }}. Colocation includes facility rating, security and service levels; additional requirements are certifications, personnel and other items.</p>
+</section>
+{% endif %}
 
 <section class="card">
   <div class="eyebrow">Site fit</div>
@@ -66,6 +87,20 @@
   </div>
   <p class="source">Source: {{ job.reference.spec.name }}. Ranked by gaps, then Comply count. Ratings are drafts until a reviewer signs off each row in the matrix.</p>
 </section>
+
+{% if r.clarifications %}
+<section class="card">
+  <div class="eyebrow">Clarifications</div>
+  <h2>Questions for the procuring entity</h2>
+  <p class="muted">Raise these at the Pre-Bid Conference or in a written clarification before the deadline in the Instructions to Bidders. Check the answers in the Supplemental/Bid Bulletin.</p>
+  <ol class="questions">
+  {% for q in r.clarifications %}
+    <li>{{ q.question }} <span class="small mono">{{ q.id }}{% if q.doc %} · {{ q.doc }}{% endif %}{% if q.clause %} cl. {{ q.clause }}{% endif %}{% if q.category %} · {{ q.category }}{% endif %}</span></li>
+  {% endfor %}
+  </ol>
+  <p class="source">Source: requirements rated Clarify in the matrix. Drafts: review before sending.</p>
+</section>
+{% endif %}
 
 {% if r.flags %}
 <section class="card">

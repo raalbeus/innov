@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Bid documents · {{ app_name }}{% endblock %}
+{% block content %}
+{% if note %}<div class="notice green" role="status">{{ note }}</div>{% endif %}
+<section class="card">
+  <div class="eyebrow">Step 3 of 3</div>
+  <h1>Qualify a bid</h1>
+  <div class="notice neutral">Rating against <strong>{{ spec.name }}</strong> ({{ spec.summary.sites | length }} sites, {{ spec.summary.rows }} rows, uploaded {{ spec.uploaded | ts }}). <a href="/spec">Change</a></div>
+  <p class="muted">Upload every document in the package: bidding documents, annexes and terms of reference (scanned is fine), and every bid bulletin. PDF only, up to {{ max_mb }} MB in total.</p>
+  <form method="post" action="/jobs" enctype="multipart/form-data" id="upload-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="spec_id" value="{{ spec.id }}">
+    <label for="title">Name (optional)</label>
+    <input id="title" name="title" maxlength="120" placeholder="e.g. BI Business Continuity Facility">
+    <label for="files">Bid documents</label>
+    <input id="files" name="files" type="file" accept="application/pdf,.pdf" multiple required>
+    <ul id="file-list" class="files"></ul>
+    <button class="btn" type="submit">Start qualification</button>
+  </form>
+  <p class="source">The app checks, in order: 1 eligibility (Single Largest Completed Contract, SLCC), 2 delivery lead time, 3 data center compliance (colocation, DR seats, office space, connectivity, certifications and personnel).</p>
+</section>
+
+<section class="card">
+  <div class="eyebrow">Reference Register</div>
+  <h2>Contracts, lead times, seats and personnel</h2>
+  {% if ref.register %}
+  <p class="muted">In use: <strong>{{ ref.register.name }}</strong>, modified {{ (ref.register.modified or '')[:10] }}.</p>
+  {% elif ref.error %}
+  <div class="notice red" role="alert">{{ ref.error }}</div>
+  {% else %}
+  <div class="notice amber">No Reference Register found. The blank template is used: SLCC, lead times, distances and personnel will be unverified.</div>
+  {% endif %}
+  <p class="source">{{ ref.location }}</p>
+  {% if admin %}
+  <form method="post" action="/reference" enctype="multipart/form-data" class="admin-upload">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="ref-file">Replace the Reference Register (administrators)</label>
+    <input id="ref-file" name="file" type="file" accept=".xlsx" required>
+    <button class="btn secondary" type="submit">Upload</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
