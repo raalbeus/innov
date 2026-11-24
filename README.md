@@ -21,26 +21,26 @@ Register; the app downgrades anything else to Unverified. Ratings are drafts unt
 ## Try it in a GitHub Codespace (sandbox)
 A codespace runs the app in your browser on GitHub, private to you. Nothing is installed on your computer.
 
-1. **Add three secrets.** On GitHub: this repository > Settings > Secrets and variables > Codespaces >
-   New repository secret.
-   - `ANTHROPIC_API_KEY`: a Claude API key from the Anthropic Console. Get IT/data approval first: uploaded
-     tenders and the Specifications Table are sent to the Claude API.
-   - `ALLOWED_EMAILS`: your sign-in address if it is not @vitrodc.com (comma-separated for several).
-   - `ADMIN_EMAILS`: the address(es) allowed to upload the reference files, usually your own.
-2. **Create the codespace.** Repository home > Code > Codespaces > Create codespace on main. Wait for
-   setup to finish (a few minutes the first time).
-3. **Start the app.** In the codespace terminal run `./run-codespace.sh`. A browser tab opens on port 8000.
-   If it does not, open the Ports tab and click the globe icon next to port 8000.
-4. **Sign in.** Enter your email. In this sandbox the code is printed in the terminal ("DEV MODE sign-in
-   code") instead of emailed. Enter it on the page.
-5. **Specifications Table (step 2).** Upload `VITRO_Specifications_Table_*.xlsx`, check the summary and click
-   "Use this table and continue". Admins can upload the filled Reference Register on the step 3 page (file
-   name must start with `VITRO_Reference_Register`).
-6. **Qualify a bid (step 3).** Upload all PDFs of the bid package and start. A large scanned tender takes several
-   minutes. Download the memo and matrix from the results page.
+1. **Create the codespace.** Repository home > Code > Codespaces > Create codespace on main. The first start
+   installs the requirements and **starts the app by itself** (a few minutes).
+2. **Open the app.** A browser tab opens on port 8000. If it does not, open the Ports tab and click the globe
+   icon next to "Bid Qualification". Keep the port **Private** (the default).
+3. **Sign in.** Enter any @vitrodc.com address and click "Send code". In the codespace terminal run
+   `./signin-code.sh` to see the code (the sandbox does not send email), and enter it.
+4. **Step 2.** Without an API key the app runs on SAMPLE data: click "Use the reference folder table", check the
+   summary and continue. With your real table, upload it instead.
+5. **Step 3.** Upload the bid PDFs and start. Download the memo and matrix from the results page.
 
-Keep port 8000 **Private** (the default). Codespaces stop after inactivity; the data in `data/` stays in
-the codespace until you delete it. Delete the codespace when you are done with confidential files.
+If the app page shows "502", the app is not running: in the terminal run `./start-codespace-app.sh`
+(it prints the reason if it cannot start; the log is `data/app.log`).
+
+**Real Claude runs.** Add `ANTHROPIC_API_KEY` under Settings > Secrets and variables > Codespaces, then
+restart the codespace. Get IT/data approval first: uploaded tenders and the Specifications Table are sent to
+the Claude API. Other optional secrets: `ALLOWED_EMAILS` (sign-in addresses outside @vitrodc.com) and
+`ADMIN_EMAILS` (who may upload the Reference Register).
+
+Codespaces stop after inactivity; the app starts again when you reopen the codespace. Data in `data/` stays
+in the codespace until you delete it. Delete the codespace when you are done with confidential files.
 
 ## Production setup (IT)
 | # | Item | Detail |

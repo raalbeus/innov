@@ -2,14 +2,26 @@
   "name": "VITRO Bid Qualification",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
   "postCreateCommand": "pip install --user -r requirements.txt",
-  "postAttachCommand": "echo 'Start the app with: ./run-codespace.sh'",
-  "forwardPorts": [8000],
+  "postAttachCommand": "echo 'Bid Qualification: open port 8000 from the Ports tab. Sign-in code: ./signin-code.sh'",
+  "forwardPorts": [
+    8000
+  ],
   "portsAttributes": {
-    "8000": { "label": "Bid Qualification", "onAutoForward": "openBrowser" }
+    "8000": {
+      "label": "Bid Qualification",
+      "onAutoForward": "openBrowser"
+    }
   },
   "secrets": {
-    "ANTHROPIC_API_KEY": { "description": "Claude API key from the Anthropic Console (organization workspace with a spend limit). Needs data approval: bid documents and the Specifications Table are sent to the Claude API." },
-    "ALLOWED_EMAILS": { "description": "Comma-separated addresses outside @vitrodc.com that may sign in, e.g. your own claude.ai or Gmail address." },
-    "ADMIN_EMAILS": { "description": "Comma-separated addresses that may upload the Specifications Table and Reference Register. Each must also be able to sign in." }
-  }
+    "ANTHROPIC_API_KEY": {
+      "description": "Claude API key from the Anthropic Console (organization workspace with a spend limit). Needs data approval: bid documents and the Specifications Table are sent to the Claude API."
+    },
+    "ALLOWED_EMAILS": {
+      "description": "Comma-separated addresses outside @vitrodc.com that may sign in, e.g. your own claude.ai or Gmail address."
+    },
+    "ADMIN_EMAILS": {
+      "description": "Comma-separated addresses that may upload the Specifications Table and Reference Register. Each must also be able to sign in."
+    }
+  },
+  "postStartCommand": "./start-codespace-app.sh"
 }
