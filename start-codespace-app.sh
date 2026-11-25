@@ -20,6 +20,8 @@ fi
 
 export MAIL_MODE="${MAIL_MODE:-console}" SOURCE_MODE="${SOURCE_MODE:-local}" COOKIE_SECURE="${COOKIE_SECURE:-true}"
 export LOCAL_REF_DIR="${LOCAL_REF_DIR:-$DATA_DIR/reference}"
+# Sign-in is skipped in the sandbox for testing. Start with SKIP_LOGIN=false ./start-codespace-app.sh to test sign-in.
+export SKIP_LOGIN="${SKIP_LOGIN:-true}"
 mkdir -p "$LOCAL_REF_DIR"
 # Keep the session secret across restarts so users stay signed in.
 if [ -z "${SESSION_SECRET:-}" ]; then
@@ -45,7 +47,11 @@ for _ in $(seq 60); do
   if curl -s -o /dev/null --max-time 2 http://127.0.0.1:8000/login; then
     echo "The app is running on port 8000 (AI_MODE=$AI_MODE). Open it from the Ports tab."
     [ "$AI_MODE" = "replay" ] && echo "Sample mode: in step 2 click 'Use the reference folder table' (SAMPLE data)."
-    echo "Sign-in code: run ./signin-code.sh after you click 'Send code'."
+    if [ "$SKIP_LOGIN" = "true" ]; then
+      echo "Sign-in is skipped for testing: the app opens on the home page."
+    else
+      echo "Sign-in code: run ./signin-code.sh after you click 'Send code'."
+    fi
     exit 0
   fi
   sleep 1

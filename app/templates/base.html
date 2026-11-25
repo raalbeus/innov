@@ -16,8 +16,10 @@
   {% if user %}
   <form method="post" action="/logout" class="who">
     <span>{{ user }}</span>
+    {% if not skip_login %}
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <button class="btn-link" type="submit">Sign out</button>
+    {% endif %}
   </form>
   {% endif %}
 </header>
@@ -26,7 +28,7 @@
 {% if user and step %}
 <nav class="steps" aria-label="Qualification steps">
   <ol>
-    <li class="done"><span class="n">1</span> Signed in</li>
+    <li class="done"><span class="n">1</span> {{ 'Sign-in skipped (test)' if skip_login else 'Signed in' }}</li>
     <li class="{{ 'current' if step == 2 else ('done' if spec else 'todo') }}" {% if step == 2 %}aria-current="step"{% endif %}>
       <a href="/spec"><span class="n">2</span> Specifications Table</a></li>
     <li class="{{ 'current' if step == 3 else ('todo' if spec else 'locked') }}" {% if step == 3 %}aria-current="step"{% endif %}>

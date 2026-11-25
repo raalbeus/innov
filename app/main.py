@@ -32,7 +32,7 @@ executor = ThreadPoolExecutor(max_workers=2)
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=HERE / "templates")
 templates.env.globals.update(app_name=config.APP_NAME, warnings=config.warnings(),
-                             domains=config.ALLOWED_DOMAINS)
+                             domains=config.ALLOWED_DOMAINS, skip_login=config.SKIP_LOGIN)
 
 
 def verdict_class(v):
@@ -67,10 +67,10 @@ async def security_headers(request: Request, call_next):
 
 
 def page(request, name, **ctx):
+    user = auth.current_user(request)  # first: with SKIP_LOGIN it starts a fresh session
     if "csrf" not in request.session:
         auth.new_csrf(request.session)
-    return templates.TemplateResponse(request, name, {"csrf": request.session["csrf"],
-                                                      "user": auth.current_user(request), **ctx})
+    return templates.TemplateResponse(request, name, {"csrf": request.session["csrf"], "user": user, **ctx})
 
 
 def require_user(request):
@@ -93,6 +93,8 @@ def root(request: Request):
 
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
+    if config.SKIP_LOGIN:
+        return RedirectResponse("/home", status_code=303)
     return page(request, "login.html")
 
 

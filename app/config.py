@@ -51,6 +51,9 @@ ALLOWED_DOMAINS = [d.strip().lower() for d in env("ALLOWED_DOMAINS", "vitrodc.co
 ALLOWED_EMAILS = {e.strip().lower() for e in env("ALLOWED_EMAILS", "").split(",") if e.strip()}
 # Who may replace the reference files from the app (local reference folder only).
 ADMIN_EMAILS = {e.strip().lower() for e in env("ADMIN_EMAILS", "").split(",") if e.strip()}
+# Sandbox testing only: skip sign-in and act as TEST_USER. Refused unless MAIL_MODE=console.
+SKIP_LOGIN = env("SKIP_LOGIN", "false").lower() == "true"
+TEST_USER = env("TEST_USER", "tester@vitrodc.com").strip().lower()
 OTP_TTL_MIN = int(env("OTP_TTL_MIN", "10"))
 OTP_MAX_ATTEMPTS = int(env("OTP_MAX_ATTEMPTS", "5"))
 OTP_MAX_SENDS_PER_15MIN = int(env("OTP_MAX_SENDS_PER_15MIN", "3"))
@@ -93,6 +96,9 @@ def check():
                         "SHAREPOINT_SITE_PATH, SHAREPOINT_FOLDER.")
     if AI_MODE == "claude" and not (env("ANTHROPIC_API_KEY") or env("ANTHROPIC_AUTH_TOKEN")):
         problems.append("AI_MODE=claude needs ANTHROPIC_API_KEY.")
+    if SKIP_LOGIN and MAIL_MODE != "console":
+        problems.append("SKIP_LOGIN=true is for sandbox testing only and needs MAIL_MODE=console. "
+                        "Remove SKIP_LOGIN in production.")
     if MAIL_MODE not in ("console", "graph"):
         problems.append("MAIL_MODE must be console or graph.")
     if SOURCE_MODE not in ("local", "sharepoint"):
@@ -105,6 +111,9 @@ def check():
 def warnings():
     """Settings that are allowed but must not reach production."""
     w = []
+    if SKIP_LOGIN:
+        w.append(f"SKIP_LOGIN=true: sign-in is off. Anyone who can open this address works as {TEST_USER}. "
+                 "Sandbox testing only.")
     if MAIL_MODE == "console":
         w.append("MAIL_MODE=console: sign-in codes are written to the server log. Development only.")
     if not COOKIE_SECURE:

@@ -84,6 +84,10 @@ def check_csrf(session, token):
 
 def current_user(request):
     s = request.session
+    if config.SKIP_LOGIN:  # sandbox testing only (config.check refuses it outside MAIL_MODE=console)
+        if s.get("email") != config.TEST_USER or s.get("expires", 0) < time.time():
+            sign_in(request, config.TEST_USER)
+        return config.TEST_USER
     if not s.get("email") or s.get("expires", 0) < time.time():
         return None
     return s["email"]

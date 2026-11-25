@@ -25,8 +25,9 @@ A codespace runs the app in your browser on GitHub, private to you. Nothing is i
    installs the requirements and **starts the app by itself** (a few minutes).
 2. **Open the app.** A browser tab opens on port 8000. If it does not, open the Ports tab and click the globe
    icon next to "Bid Qualification". Keep the port **Private** (the default).
-3. **Sign in.** Enter any @vitrodc.com address and click "Send code". In the codespace terminal run
-   `./signin-code.sh` to see the code (the sandbox does not send email), and enter it.
+3. **Sign-in is skipped in the sandbox** (`SKIP_LOGIN=true`): the app opens on the home page as
+   `tester@vitrodc.com`. To test sign-in, start with `SKIP_LOGIN=false ./start-codespace-app.sh`, enter any
+   @vitrodc.com address, and run `./signin-code.sh` in the terminal to see the code (the sandbox does not send email).
 4. **Step 2.** Without an API key the app runs on SAMPLE data: click "Use the reference folder table", check the
    summary and continue. With your real table, upload it instead.
 5. **Step 3.** Upload the bid PDFs and start. Download the memo and matrix from the results page.
@@ -62,6 +63,7 @@ banner while one is active:
 | `SOURCE_MODE` | `sharepoint` | `local`: files in `LOCAL_REF_DIR`, uploaded by `ADMIN_EMAILS` |
 | `AI_MODE` | `claude` | `replay`: saved outputs, for testing without an API key |
 | `COOKIE_SECURE` | `true` | `false` only for plain http on localhost |
+| `SKIP_LOGIN` | unset | `true`: no sign-in, everyone works as `TEST_USER`. Refused unless `MAIL_MODE=console` |
 
 ## Testing without confidential data
 `python3 tests/flow_test.py` runs sign-in, step 2, step 3 and a full run in replay mode on invented data
@@ -91,6 +93,7 @@ do not read the uploaded PDFs.
 | `skill/` | The same process as a Claude skill (`/bid-qualify`) for use in claude.ai |
 | `tests/flow_test.py` | End-to-end test of the three-step flow on SAMPLE data: `python3 tests/flow_test.py [pdf_dir]` |
 | `tests/make_sample_fixtures.py` | Writes a synthetic Specifications Table and replay outputs for sandbox testing |
+| `tests/skip_login_test.py` | Checks the sandbox `SKIP_LOGIN` switch and that it is refused outside sandbox mode |
 | `tests/smoke_test.py` | End-to-end test on the confidential fixtures, which are not in the repository |
 | `.devcontainer/`, `run-codespace.sh` | GitHub Codespaces sandbox |
 | `Dockerfile`, `run.sh` | Production |
