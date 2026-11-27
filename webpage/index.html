@@ -1,0 +1,638 @@
+<title>VITRO Bid Qualification</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: header, step bar, white cards on surface; VITRO design system tokens (screen tool, light and dark). */
+:root {
+  --cobalt: #00006e; --cobalt-70: #4d4d9a; --cobalt-10: #e6e6f1;
+  --ink: #1a1a2e; --ink-muted: #5a5a6e; --ink-subtle: #6b6b7d;
+  --surface: #f5f6f8; --row-alt: #eeeef7; --border: #d1d1d1; --white: #ffffff; --on-cobalt: #ffffff;
+  --amber: #a35f00; --amber-10: #fbf0dc; --green: #1e6b45; --green-10: #e3f1e9; --red: #b3261e; --red-10: #fbe8e6;
+  --font-display: "Aptos Display", Aptos, "Segoe UI", system-ui, sans-serif;
+  --font-sans: Aptos, "Segoe UI", system-ui, sans-serif;
+  --font-mono: Consolas, "Cascadia Mono", ui-monospace, monospace;
+  --radius-sm: 4px; --radius-md: 8px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --cobalt: #b3b6e6; --cobalt-70: #5a5fa8; --cobalt-10: #171b47; --ink: #e8e9f4; --ink-muted: #9da1c2; --ink-subtle: #8e92b4;
+  --surface: #05061a; --row-alt: #12163a; --border: #20264f; --white: #0b0e27; --on-cobalt: #05061a;
+  --amber: #f2a541; --amber-10: #2a2010; --green: #5cc48e; --green-10: #10261c; --red: #f07a72; --red-10: #2b1414; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --cobalt: #b3b6e6; --cobalt-70: #5a5fa8; --cobalt-10: #171b47; --ink: #e8e9f4; --ink-muted: #9da1c2; --ink-subtle: #8e92b4;
+  --surface: #05061a; --row-alt: #12163a; --border: #20264f; --white: #0b0e27; --on-cobalt: #05061a;
+  --amber: #f2a541; --amber-10: #2a2010; --green: #5cc48e; --green-10: #10261c; --red: #f07a72; --red-10: #2b1414; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--surface); color: var(--ink); font: 15px/22px var(--font-sans); }
+a { color: var(--cobalt); }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; background: var(--white); border-bottom: 1px solid var(--border); padding-block: 12px; }
+.brand-name { font: 600 18px/24px var(--font-display); }
+.eyebrow { font: 700 11px/14px var(--font-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--cobalt); margin-bottom: 8px; }
+.who { font-size: 13px; color: var(--ink-muted); overflow-wrap: anywhere; }
+main { max-width: 1100px; margin: 24px auto; }
+footer { max-width: 1100px; margin: 32px auto; font-size: 11px; color: var(--ink-muted); }
+.stack { display: flex; flex-direction: column; gap: 24px; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; min-width: 0; }
+.narrow { max-width: 560px; margin: 24px auto; width: 100%; }
+h1 { font: 700 26px/34px var(--font-display); margin: 0 0 8px; text-wrap: balance; }
+h2 { font: 600 20px/28px var(--font-display); margin: 0 0 8px; text-wrap: balance; }
+p { margin: 0 0 12px; max-width: 75ch; }
+.muted { color: var(--ink-muted); }
+.small { font-size: 13px; color: var(--ink-muted); }
+.source { font-size: 11px; line-height: 15px; color: var(--ink-muted); margin-top: 8px; }
+.source, .small, .notice, .files, ol.questions li, td { overflow-wrap: anywhere; }
+label { display: block; font-weight: 600; margin: 16px 0 6px; font-size: 13px; }
+input[type=text], input[type=file] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; background: var(--white); color: var(--ink); }
+:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+.btn { padding: 10px 18px; background: var(--cobalt); color: var(--on-cobalt); border: 1px solid var(--cobalt); border-radius: var(--radius-sm); font: 600 14px/20px var(--font-sans); cursor: pointer; }
+.btn.secondary { background: var(--white); color: var(--cobalt); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.btn-link { background: none; border: 0; color: var(--cobalt); text-decoration: underline; cursor: pointer; font: inherit; padding: 0; text-align: left; }
+.notice { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 14px; margin: 12px 0; }
+.notice.amber { background: var(--amber-10); color: var(--amber); }
+.notice.red { background: var(--red-10); color: var(--red); }
+.notice.green { background: var(--green-10); color: var(--green); }
+.notice.neutral { background: var(--cobalt-10); color: var(--ink); }
+.scroll { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; font: 13px/20px var(--font-mono); background: var(--surface); font-variant-numeric: tabular-nums; }
+table.data th { background: var(--cobalt); color: var(--on-cobalt); text-align: left; padding: 8px 10px; font-weight: 700; white-space: nowrap; }
+table.data td { padding: 8px 10px; border: 1px solid var(--border); vertical-align: top; }
+table.data tbody tr:nth-child(even) td { background: var(--row-alt); }
+.num { text-align: right; }
+.mono { font-family: var(--font-mono); font-size: 12px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm); font: 700 12px/18px var(--font-mono); white-space: nowrap; }
+.tag.green { background: var(--green-10); color: var(--green); }
+.tag.amber { background: var(--amber-10); color: var(--amber); }
+.tag.red { background: var(--red-10); color: var(--red); }
+.tag.neutral { background: var(--row-alt); color: var(--ink-muted); }
+.tag.big { font-size: 16px; line-height: 24px; padding: 4px 12px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin: 16px 0; }
+.kpi { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; background: var(--white); min-width: 0; }
+.kpi-label { font-size: 12px; color: var(--ink-muted); }
+.kpi-value { font: 700 18px/26px var(--font-mono); color: var(--cobalt); overflow-wrap: anywhere; }
+.steps ol { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin: 0 0 24px; padding: 0; }
+.steps li { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--white); font-size: 14px; color: var(--ink-muted); }
+.steps .n { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center; font: 700 12px/1 var(--font-mono); background: var(--cobalt-10); color: var(--cobalt); flex: none; }
+.steps li.current { border-color: var(--cobalt); color: var(--ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--cobalt); }
+.steps li.current .n, .steps li.done .n { background: var(--cobalt); color: var(--on-cobalt); }
+.steps li.done { color: var(--ink); }
+.steps li.locked { background: var(--surface); }
+.steps button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.steps button:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }
+.files { font: 12px/18px var(--font-mono); color: var(--ink-muted); padding-left: 18px; margin: 8px 0 0; }
+.meter { height: 10px; background: var(--cobalt-10); border-radius: var(--radius-sm); overflow: hidden; margin: 12px 0; }
+.meter-fill { height: 100%; width: 0; background: var(--cobalt); transition: width .4s; }
+.stages { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.stages li { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+.stages .st { font: 700 12px/18px var(--font-mono); min-width: 64px; }
+.log { font: 12px/18px var(--font-mono); color: var(--ink-muted); max-height: 160px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; white-space: pre-wrap; }
+ol.questions { padding-left: 20px; margin: 8px 0; }
+ol.questions li { margin-bottom: 10px; }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.split > * { min-width: 0; }
+@media (prefers-reduced-motion: reduce) { .meter-fill { transition: none; } }
+</style>
+
+<header class="bar gut">
+  <div><div class="eyebrow">VITRO Data Centers</div><div class="brand-name">Bid Qualification</div></div>
+  <div class="who" id="who"></div>
+</header>
+
+<main class="gut">
+  <nav class="steps" id="steps" aria-label="Qualification steps" hidden>
+    <ol>
+      <li class="done"><span class="n">1</span> Signed in</li>
+      <li id="st2"><button type="button" data-go="spec"><span class="n">2</span> Specifications Table</button></li>
+      <li id="st3"><button type="button" data-go="bid"><span class="n">3</span> Bid documents <span class="small" id="lock">(locked)</span></button></li>
+    </ol>
+  </nav>
+
+  <section id="v-check" class="card narrow">
+    <div class="eyebrow">Sign in</div>
+    <h1>Checking your access</h1>
+    <p class="muted">Confirming your claude.ai sign-in and company email.</p>
+  </section>
+
+  <section id="v-outside" class="card narrow" hidden>
+    <div class="eyebrow">Sign in</div>
+    <h1>Open this page in claude.ai</h1>
+    <p class="muted">Sign in to claude.ai with your VITRO company account, then open this link again. The page uses your claude.ai sign-in to confirm who you are.</p>
+  </section>
+
+  <section id="v-denied" class="card narrow" hidden>
+    <div class="eyebrow">Sign in</div>
+    <h1>This account cannot use the tool</h1>
+    <p class="muted" id="denied-msg"></p>
+    <p class="small">Sign in to claude.ai with your @vitrodc.com account, or ask the page owner to add your address.</p>
+  </section>
+
+  <div id="v-home" class="stack" hidden>
+    <section class="card"><div class="eyebrow">Next step</div><div id="home-next"></div></section>
+    <section class="card">
+      <div class="eyebrow">History</div>
+      <h2>Your runs</h2>
+      <div id="history"><p class="muted">Loading your runs.</p></div>
+      <p class="source">Only you can see your runs. Re-download the memo and matrix from here.</p>
+    </section>
+  </div>
+
+  <div id="v-spec" class="stack" hidden>
+    <div id="spec-note" class="notice amber" hidden style="margin:0">Confirm a Specifications Table before uploading the bid documents.</div>
+    <section class="card">
+      <div class="eyebrow">Step 2 of 3</div>
+      <h1>Specifications Table</h1>
+      <p class="muted">Every requirement is rated site by site against this table. A requirement can be rated Comply only when it cites a cell in it, so use the current version.</p>
+      <div id="latest-spec"></div>
+      <label for="spec-file">Upload a Specifications Table (.xlsx)</label>
+      <input id="spec-file" type="file" accept=".xlsx">
+      <div id="spec-err" class="notice red" role="alert" hidden></div>
+      <div class="row"><button class="btn" type="button" id="spec-check">Upload and check</button></div>
+      <p class="source">The file is read in your browser: site names in row 1 from column H, specification rows below. You review a summary before it is used. A confirmed upload becomes the latest table for everyone using this page.</p>
+    </section>
+    <section class="card">
+      <div class="eyebrow">Optional</div>
+      <h2>Reference Register</h2>
+      <p class="muted">Contracts, lead times, DR seats, site distances and personnel. Without it, the eligibility (SLCC) and lead-time gates show Unverified.</p>
+      <div id="latest-reg"></div>
+      <label for="reg-file">Upload a Reference Register (.xlsx)</label>
+      <input id="reg-file" type="file" accept=".xlsx">
+      <div id="reg-err" class="notice red" role="alert" hidden></div>
+      <div class="row"><button class="btn secondary" type="button" id="reg-check">Upload register</button></div>
+    </section>
+  </div>
+
+  <div id="v-review" class="stack" hidden>
+    <section class="card">
+      <div class="eyebrow">Step 2 of 3 · Review</div>
+      <h1 id="rv-name"></h1>
+      <p class="muted">Check that this is the current table before you use it.</p>
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-label">Sites</div><div class="kpi-value" id="rv-sites"></div></div>
+        <div class="kpi"><div class="kpi-label">Specification rows</div><div class="kpi-value" id="rv-rows"></div></div>
+        <div class="kpi"><div class="kpi-label">Sections</div><div class="kpi-value" id="rv-secs"></div></div>
+      </div>
+      <p class="source" id="rv-source"></p>
+      <div class="row"><button class="btn" type="button" id="rv-confirm">Use this table and continue</button>
+        <button class="btn secondary" type="button" data-go="spec">Choose another</button></div>
+    </section>
+    <section class="card">
+      <div class="eyebrow">Sites</div>
+      <h2>Sites found in the table</h2>
+      <div class="scroll"><table class="data"><thead><tr><th>Site</th><th>City</th><th>Ownership</th><th class="num">Rows with data</th><th class="num">Blank rows</th></tr></thead><tbody id="rv-sitebody"></tbody></table></div>
+      <p class="source" id="rv-sitesource"></p>
+    </section>
+    <section class="card">
+      <div class="eyebrow">Sections</div>
+      <h2>Rows by section</h2>
+      <div class="scroll"><table class="data"><thead><tr><th>Section</th><th class="num">Rows</th></tr></thead><tbody id="rv-secbody"></tbody></table></div>
+    </section>
+  </div>
+
+  <div id="v-bid" class="stack" hidden>
+    <section class="card">
+      <div class="eyebrow">Step 3 of 3</div>
+      <h1>Qualify a bid</h1>
+      <div class="notice neutral" id="bid-spec"></div>
+      <p class="muted">Upload every document in the package: bidding documents, annexes and terms of reference (scanned is fine), and every bid bulletin. PDF only.</p>
+      <label for="title">Name (optional)</label>
+      <input id="title" type="text" maxlength="120" placeholder="e.g. Business Continuity Facility">
+      <label for="pdfs">Bid documents</label>
+      <input id="pdfs" type="file" accept="application/pdf,.pdf" multiple>
+      <ul class="files" id="pdf-list"></ul>
+      <div id="bid-err" class="notice red" role="alert" hidden></div>
+      <div class="row"><button class="btn" type="button" id="start">Start qualification</button></div>
+      <p class="source">Checked in order: 1 eligibility (Single Largest Completed Contract, SLCC), 2 delivery lead time, 3 data center compliance (colocation, disaster recovery (DR) seats, office space, connectivity, certifications and personnel). Claude reads the documents using your own claude.ai usage. Keep this page open until the run finishes.</p>
+    </section>
+  </div>
+
+  <section id="v-run" class="card" hidden>
+    <div class="eyebrow">Running</div>
+    <h1 id="run-title"></h1>
+    <p id="run-step" aria-live="polite"></p>
+    <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="meter-fill" id="run-bar"></div></div>
+    <ul class="stages" id="stages"></ul>
+    <div id="run-err" class="notice red" role="alert" hidden></div>
+    <div class="log" id="run-log" hidden></div>
+    <div class="row"><button class="btn secondary" type="button" id="stop">Stop</button>
+      <button class="btn" type="button" id="rerun" hidden>Run again</button>
+      <button class="btn secondary" type="button" data-go="bid" id="run-back" hidden>Back to step 3</button></div>
+    <p class="source">A large scanned tender takes several minutes. Keep this tab open. If the run stops, Run again reuses the parts that already finished.</p>
+  </section>
+
+  <div id="v-results" class="stack" hidden>
+    <p class="small" style="margin:0"><button class="btn-link" type="button" data-go="home">Back to home</button></p>
+    <section class="card">
+      <div class="eyebrow">Recommendation</div>
+      <h1 id="res-title"></h1>
+      <p id="res-verdict"></p>
+      <div id="res-incomplete" class="notice red" role="alert" hidden></div>
+      <div class="kpis" id="res-kpis"></div>
+      <p class="source" id="res-source"></p>
+      <div class="row"><button class="btn" type="button" id="dl-memo">Download Go/No-Go memo (.docx)</button>
+        <button class="btn secondary" type="button" id="dl-matrix">Download matrix (.xlsx)</button></div>
+      <div id="dl-err" class="notice red" role="alert" hidden></div>
+      <p class="source">Ratings are drafts until a reviewer signs off each row in the matrix. INTERNAL: do not send outside VITRO.</p>
+    </section>
+    <section class="card">
+      <div class="eyebrow">Gates</div>
+      <h2>Gate results</h2>
+      <p class="muted">Checked in order. A failed gate means No-Go regardless of the later gates.</p>
+      <div class="scroll"><table class="data"><thead><tr><th>Gate</th><th>What is checked</th><th>Result</th></tr></thead><tbody id="res-gates"></tbody></table></div>
+      <p class="source" id="res-gates-src"></p>
+    </section>
+    <section class="card">
+      <div class="eyebrow">Gate 3 detail</div>
+      <h2>Data center requirements by area</h2>
+      <div class="scroll"><table class="data"><thead><tr><th>Area</th><th>Result</th><th class="num">Mandatory rows</th><th class="num">Comply</th><th class="num">Partial</th><th class="num">Clarify</th><th class="num">Unverified</th><th class="num">Gap</th></tr></thead><tbody id="res-areas"></tbody></table></div>
+      <p class="source" id="res-areas-src"></p>
+    </section>
+    <section class="card">
+      <div class="eyebrow">Site fit</div>
+      <h2>Sites ranked</h2>
+      <div class="scroll"><table class="data"><thead><tr><th>Site</th><th>Fit</th><th class="num">Comply</th><th class="num">Partial</th><th class="num">Clarify</th><th class="num">Unverified</th><th class="num">Gap</th><th>Gap clauses</th></tr></thead><tbody id="res-sites"></tbody></table></div>
+      <p class="source" id="res-sites-src"></p>
+    </section>
+    <section class="card" id="res-clar-card">
+      <div class="eyebrow">Clarifications</div>
+      <h2>Questions for the procuring entity</h2>
+      <p class="muted">Raise these at the Pre-Bid Conference or in a written clarification before the deadline in the Instructions to Bidders. Check the answers in the Supplemental/Bid Bulletin.</p>
+      <ol class="questions" id="res-clar"></ol>
+      <p class="source">Source: requirements rated Clarify in the matrix. Drafts: review before sending.</p>
+    </section>
+    <section class="card" id="res-flags-card">
+      <div class="eyebrow">Flags</div>
+      <h2>For the bid decision</h2>
+      <div class="scroll"><table class="data"><thead><tr><th>Flag</th><th>Reference</th></tr></thead><tbody id="res-flags"></tbody></table></div>
+      <p class="source">Source: bid documents and bulletins, as referenced. Pricing, legal terms and government positions are listed, not assessed.</p>
+    </section>
+  </div>
+</main>
+<footer class="gut">VITRO Data Centers · A PLDT Group Company · Confidential · Internal use only</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="bq-core.js"></script>
+<script src="bq-docs.js"></script>
+<script src="bq-ai.js"></script>
+<script>
+(() => {
+  // Who may use the tool. The page owner can always open it.
+  const ALLOWED_DOMAINS = ["vitrodc.com"];
+  const ALLOWED_EMAILS = [];   // extra addresses, lower case, e.g. "name@example.com"
+  const PART_CHARS = 60000;    // stored JSON is split into records well under the 256 KiB limit
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const err = (id, msg) => { const e = $(id); e.textContent = msg || ""; e.hidden = !msg; };
+  const tagClass = (v) => ({ Go: "green", Pass: "green", Comply: "green", "No-Go": "red", Fail: "red", Gap: "red",
+    "Not required": "neutral", "N/A": "neutral", "Partner scope": "neutral" }[v] || "amber");
+  const tag = (v, big) => `<span class="tag ${tagClass(v)}${big ? " big" : ""}">${esc(v)}</span>`;
+  const fmtDate = (ms) => { const d = new Date(ms); return isNaN(d) ? "" : d.toISOString().slice(0, 16).replace("T", " "); };
+  const S = { view: "check", confirmed: null, candidate: null, register: null, latestSpec: null, latestReg: null, result: null, files: null };
+  const VIEWS = ["check", "outside", "denied", "home", "spec", "review", "bid", "run", "results"];
+
+  function show(v) {
+    if (v === "bid" && !S.confirmed) { v = "spec"; $("spec-note").hidden = false; } else if (v === "spec") $("spec-note").hidden = true;
+    if (S.running && v !== "run") v = "run";
+    S.view = v;
+    VIEWS.forEach((x) => { $("v-" + x).hidden = x !== v; });
+    $("steps").hidden = !["home", "spec", "review", "bid"].includes(v);
+    $("st2").className = (v === "spec" || v === "review") ? "current" : (S.confirmed ? "done" : "");
+    $("st3").className = v === "bid" ? "current" : (S.confirmed ? "" : "locked");
+    $("lock").hidden = !!S.confirmed;
+    if (v === "home") renderHome();
+    if (v === "spec") renderSpecPage();
+    if (v === "bid") $("bid-spec").innerHTML = `Rating against <strong>${esc(S.confirmed.name)}</strong> (${S.confirmed.summary.sites.length} sites, ${S.confirmed.summary.rows} rows)` +
+      (S.register ? `, with Reference Register <strong>${esc(S.register.name)}</strong>` : ", without a Reference Register") +
+      `. <button class="btn-link" type="button" data-go="spec">Change</button>`;
+    window.scrollTo(0, 0);
+  }
+
+  // ------------------------------------------------------------ capabilities and access
+  const cap = async (name) => { try { return window.claude ? await window.claude.use(name) : null; } catch (e) { return null; } };
+  async function start() {
+    const user = await cap("user");
+    if (!user) return show("outside");
+    let me = null, owner = false;
+    try { me = await user.me(); owner = await user.isOwner(); } catch (e) { /* treated as unknown */ }
+    const email = String((me && me.email) || "").toLowerCase();
+    const domain = email.split("@")[1] || "";
+    S.uid = me && me.id; S.email = email; S.owner = owner;
+    const allowed = owner || (email && (ALLOWED_DOMAINS.includes(domain) || ALLOWED_EMAILS.includes(email)));
+    $("who").textContent = email || (owner ? "Page owner" : "");
+    if (!allowed) {
+      $("denied-msg").textContent = email ? `You are signed in to claude.ai as ${email}.` : "Your claude.ai account did not share an email address with this page.";
+      return show("denied");
+    }
+    S.db = await cap("db"); S.sample = await cap("sample"); S.downloads = await cap("downloads");
+    show("home");
+    loadShared();
+  }
+
+  // ------------------------------------------------------------ shared storage
+  async function putParts(base, meta, obj) {
+    const json = JSON.stringify(obj), n = Math.ceil(json.length / PART_CHARS) || 1;
+    for (let i = 0; i < n; i++) await S.db.doc(`${base}/parts/${i}`).set({ i, data: json.slice(i * PART_CHARS, (i + 1) * PART_CHARS) });
+    await S.db.doc(base).set(Object.assign({}, meta, { parts: n, savedAt: Date.now() }));
+  }
+  async function getParts(base) {
+    const meta = await S.db.doc(base).get();
+    if (!meta.exists) return null;
+    const m = meta.data(); let json = "";
+    for (let i = 0; i < m.parts; i++) { const p = await S.db.doc(`${base}/parts/${i}`).get(); if (!p.exists) return null; json += p.data().data; }
+    return { meta: m, obj: JSON.parse(json) };
+  }
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej({ code: "timeout" }), ms))]);
+  async function loadShared() {
+    if (!S.db) return;
+    try { const m = await withTimeout(S.db.doc("shared/spec").get(), 10000); S.latestSpec = m.exists ? m.data() : null; } catch (e) { S.latestSpec = null; }
+    try { const m = await withTimeout(S.db.doc("shared/register").get(), 10000); S.latestReg = m.exists ? m.data() : null; } catch (e) { S.latestReg = null; }
+    if (S.view === "spec") renderSpecPage();
+  }
+
+  // ------------------------------------------------------------ home
+  function renderHome() {
+    $("home-next").innerHTML = S.confirmed
+      ? `<h1>Upload the bid documents</h1><p class="muted">Specifications Table confirmed: <strong>${esc(S.confirmed.name)}</strong> (${S.confirmed.summary.sites.length} sites, ${S.confirmed.summary.rows} rows).</p>
+         <div class="row"><button class="btn" type="button" data-go="bid">Continue to step 3</button><button class="btn secondary" type="button" data-go="spec">Change Specifications Table</button></div>`
+      : `<h1>Confirm the Specifications Table</h1><p class="muted">Every bid is rated against the VITRO Specifications Table. Use the latest table or upload the current one before uploading the bid documents.</p>
+         <div class="row"><button class="btn" type="button" data-go="spec">Continue to step 2</button></div>`;
+    renderHistory();
+  }
+  async function renderHistory() {
+    const box = $("history");
+    if (!S.db || !S.uid) { box.innerHTML = `<p class="muted">Run history is not available in this view.</p>`; return; }
+    try {
+      const q = await withTimeout(S.db.collection(`data/users/${S.uid}/runs`).orderBy("at", "desc").limit(30).get(), 10000);
+      if (!q.docs.length) { box.innerHTML = `<p class="muted">No runs yet.</p>`; return; }
+      box.innerHTML = `<div class="scroll"><table class="data"><thead><tr><th>Bid</th><th>Started</th><th>Specifications Table</th><th>Recommendation</th><th></th></tr></thead><tbody>${
+        q.docs.map((d) => { const r = d.data(); return `<tr><td>${esc(r.title)}</td><td class="num">${esc(fmtDate(r.at))}</td><td>${esc(r.spec)}</td>
+          <td>${tag(r.verdict)}${r.incomplete ? ' <span class="tag red">incomplete</span>' : ""}</td><td><button class="btn-link" type="button" data-run="${esc(d.id)}">Open</button></td></tr>`; }).join("")
+      }</tbody></table></div>`;
+    } catch (e) { box.innerHTML = `<p class="muted">Your runs could not be loaded. Reload the page to try again.</p>`; }
+  }
+  async function openRun(id) {
+    try {
+      const got = await getParts(`data/users/${S.uid}/runs/${id}`);
+      if (!got) throw 0;
+      S.result = got.obj; renderResults(); show("results");
+    } catch (e) { alertBox("history", "This run could not be opened."); }
+  }
+  const alertBox = (id, msg) => { const box = $(id); box.insertAdjacentHTML("afterbegin", `<div class="notice red" role="alert">${esc(msg)}</div>`); };
+
+  // ------------------------------------------------------------ step 2
+  function renderSpecPage() {
+    const ls = S.latestSpec;
+    $("latest-spec").innerHTML = ls
+      ? `<div class="notice neutral">Latest table: <strong>${esc(ls.name)}</strong>, ${ls.summary.sites.length} sites, ${ls.summary.rows} rows, uploaded ${esc(fmtDate(ls.savedAt))}.
+         <div class="row" style="margin-top:8px"><button class="btn" type="button" id="use-latest">Review and use the latest table</button></div></div>`
+      : `<p class="small">${S.db ? "No table has been uploaded to this page yet." : "Shared tables are not available in this view; upload the table."}</p>`;
+    const lr = S.latestReg;
+    $("latest-reg").innerHTML = S.register
+      ? `<div class="notice green">In use: <strong>${esc(S.register.name)}</strong>. <button class="btn-link" type="button" id="reg-clear">Run without a register</button></div>`
+      : lr ? `<div class="notice neutral">Latest register: <strong>${esc(lr.name)}</strong>, uploaded ${esc(fmtDate(lr.savedAt))}. <button class="btn-link" type="button" id="use-latest-reg">Use it</button></div>`
+      : `<p class="small">No register in use.</p>`;
+  }
+  const readWb = (file) => file.arrayBuffer().then((buf) => XLSX.read(new Uint8Array(buf), { type: "array", cellDates: true }));
+  function plainDates(rows) {
+    const f = (v) => (v instanceof Date ? `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, "0")}-${String(v.getDate()).padStart(2, "0")}` : v);
+    const out = {}; for (const [k, list] of Object.entries(rows)) out[k] = list.map((r) => Object.fromEntries(Object.entries(r).map(([a, b]) => [a, f(b)]))); return out;
+  }
+  function byIdOf(rows) { const m = {}; for (const [sheet, list] of Object.entries(rows)) for (const r of list) m[String(r.ID).trim()] = [sheet, r]; return m; }
+
+  $("spec-check").addEventListener("click", async () => {
+    const f = $("spec-file").files[0];
+    if (!f) return err("spec-err", "Choose the Specifications Table (.xlsx) first.");
+    if (!/\.xlsx$/i.test(f.name)) return err("spec-err", "Upload the Specifications Table as an Excel .xlsx file.");
+    if (typeof XLSX === "undefined") return err("spec-err", "The spreadsheet reader did not load. Reload the page.");
+    let specs;
+    try { specs = BQ.readSpecs(XLSX, await readWb(f), f.name); }
+    catch (e) { return err("spec-err", "This file could not be read as the VITRO Specifications Table."); }
+    if (!specs.sites.length) return err("spec-err", "No data center sites were found. Site names must be in row 1, from column H.");
+    if (!specs.rows.length) return err("spec-err", "No specification rows were found under the site columns.");
+    err("spec-err");
+    openReview({ name: f.name, specs, summary: BQ.summariseSpecs(specs), uploaded: new Date().toISOString(), fresh: true });
+  });
+  async function useLatest() {
+    try {
+      const got = await getParts("shared/spec");
+      if (!got) throw 0;
+      openReview({ name: got.meta.name, specs: got.obj, summary: got.meta.summary, uploaded: new Date(got.meta.savedAt).toISOString(), fresh: false });
+    } catch (e) { err("spec-err", "The latest table could not be loaded. Upload the table instead."); }
+  }
+  function openReview(c) {
+    S.candidate = c;
+    const sm = c.summary;
+    $("rv-name").textContent = c.name;
+    $("rv-sites").textContent = sm.sites.length; $("rv-rows").textContent = sm.rows; $("rv-secs").textContent = sm.sections.length;
+    $("rv-source").textContent = `Source: ${c.name}, sheet "${sm.sheet}"; ${c.fresh ? "read in your browser" : "latest table saved on this page, " + fmtDate(Date.parse(c.uploaded))}.`;
+    $("rv-sitebody").innerHTML = sm.sites.map((s) => `<tr><td>${esc(s.name)}</td><td>${esc(s.city || "-")}</td><td>${esc(s.ownership || "-")}</td><td class="num">${s.filled}</td>
+      <td class="num">${s.blank}${s.blank > sm.rows / 2 ? ' <span class="tag amber">mostly blank</span>' : ""}</td></tr>`).join("");
+    $("rv-sitesource").textContent = `Source: ${c.name}. A blank cell is treated as unverified, never as available. A site with more than half its requirements unverified is not recommended.`;
+    $("rv-secbody").innerHTML = sm.sections.map((s) => `<tr><td>${esc(s.name)}</td><td class="num">${s.rows}</td></tr>`).join("");
+    show("review");
+  }
+  $("rv-confirm").addEventListener("click", async () => {
+    const c = S.candidate; S.confirmed = c; show("bid");
+    if (c.fresh && S.db) {
+      try { await putParts("shared/spec", { name: c.name, summary: c.summary, uploadedBy: S.uid || null }, c.specs); S.latestSpec = (await S.db.doc("shared/spec").get()).data(); c.fresh = false; }
+      catch (e) { $("bid-spec").insertAdjacentHTML("beforeend", `<div class="small">This table could not be saved for others (${esc(e && e.code || "error")}); it is used for your runs now.</div>`); }
+    }
+  });
+
+  $("reg-check").addEventListener("click", async () => {
+    const f = $("reg-file").files[0];
+    if (!f || !/\.xlsx$/i.test(f.name)) return err("reg-err", "Choose the Reference Register as an Excel .xlsx file.");
+    let wb; try { wb = await readWb(f); } catch (e) { return err("reg-err", "This file could not be read as an Excel workbook."); }
+    const reg = BQ.loadRegister(XLSX, wb);
+    if (!BQ.REGISTER_SHEETS.some((s) => wb.SheetNames.includes(s))) return err("reg-err", "No register sheets found (Contracts, Lead Times, Personnel, DR Seats & Office, Site Distances).");
+    err("reg-err");
+    const rows = plainDates(reg.rows), digest = BQ.registerDigest(XLSX, wb);
+    S.register = { name: f.name, rows, digest };
+    renderSpecPage();
+    if (S.db) { try { await putParts("shared/register", { name: f.name, uploadedBy: S.uid || null }, { rows, digest }); S.latestReg = (await S.db.doc("shared/register").get()).data(); } catch (e) { /* kept for this session */ } }
+  });
+  async function useLatestReg() {
+    try { const got = await getParts("shared/register"); if (!got) throw 0; S.register = { name: got.meta.name, rows: got.obj.rows, digest: got.obj.digest }; renderSpecPage(); }
+    catch (e) { err("reg-err", "The latest register could not be loaded. Upload it instead."); }
+  }
+
+  // ------------------------------------------------------------ step 3 and the run
+  $("pdfs").addEventListener("change", () => {
+    $("pdf-list").innerHTML = [...$("pdfs").files].map((f) => `<li>${esc(f.name)} (${(f.size / 1048576).toFixed(1)} MB)</li>`).join("");
+  });
+  const STAGES = [["pdf", "Read the PDF files"], ["terms", "Bid terms"], ["requirements", "Technical requirements"], ["bulletins", "Bid bulletins"],
+    ["ratings", "Rate each site"], ["gates", "Gates, evidence checks and results"]];
+  const WEIGHT = { pdf: [0, 12], terms: [12, 18], requirements: [18, 55], bulletins: [55, 62], ratings: [62, 95], gates: [95, 100] };
+  function stage(key, state, text) {
+    const li = $("stage-" + key); if (!li) return;
+    li.querySelector(".st").innerHTML = state === "done" ? '<span class="tag green">done</span>' : state === "run" ? '<span class="tag amber">running</span>' :
+      state === "fail" ? '<span class="tag red">stopped</span>' : '<span class="tag neutral">waiting</span>';
+    if (text) li.querySelector(".tx").textContent = text;
+  }
+  function progress(key, i, n, text) {
+    const [a, b] = WEIGHT[key]; const pct = Math.round(a + (b - a) * (n ? i / n : 1));
+    $("run-bar").style.width = pct + "%"; $("run-bar").parentElement.setAttribute("aria-valuenow", pct);
+    $("run-step").textContent = text;
+    stage(key, i >= n ? "done" : "run", text);
+  }
+  const logLine = (t) => { const l = $("run-log"); l.hidden = false; l.textContent += t + "\n"; l.scrollTop = l.scrollHeight; };
+  const guard = (e) => { e.preventDefault(); e.returnValue = ""; };
+
+  $("start").addEventListener("click", () => {
+    const files = [...$("pdfs").files];
+    if (!files.length) return err("bid-err", "Upload the bid documents as PDF files.");
+    if (files.some((f) => !/\.pdf$/i.test(f.name))) return err("bid-err", "Only PDF files can be uploaded.");
+    if (!S.sample) return err("bid-err", "Claude is not available in this view. Open the page in claude.ai in a browser, signed in.");
+    if (typeof pdfjsLib === "undefined" || typeof JSZip === "undefined") return err("bid-err", "The document readers did not load. Reload the page.");
+    err("bid-err");
+    S.files = files; S.title = $("title").value.trim();
+    run();
+  });
+  $("rerun").addEventListener("click", () => run());
+  $("stop").addEventListener("click", () => { if (S.abort) S.abort.abort(); });
+
+  async function run() {
+    S.running = true; S.abort = new AbortController();
+    window.addEventListener("beforeunload", guard);
+    $("run-title").textContent = S.title || S.files[0].name;
+    $("stages").innerHTML = STAGES.map(([k, t]) => `<li id="stage-${k}"><span class="st"></span><span class="tx">${esc(t)}</span></li>`).join("");
+    STAGES.forEach(([k]) => stage(k, "wait"));
+    $("run-log").textContent = ""; $("run-log").hidden = true; err("run-err");
+    $("stop").hidden = false; $("rerun").hidden = true; $("run-back").hidden = true;
+    show("run");
+    try {
+      const limits = await S.sample.limits().catch(() => null);
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const docs = [];
+      const total = S.files.length;
+      for (let k = 0; k < total; k++) {
+        const f = S.files[k];
+        docs.push(await BQAI.readPdf(pdfjsLib, f, (i, n) => progress("pdf", k + i / n, total, `Reading ${f.name}, page ${i} of ${n}`)));
+        if (S.abort.signal.aborted) throw { code: "cancelled" };
+      }
+      progress("pdf", total, total, `Read ${total} file(s): ${docs.reduce((s, d) => s + d.pages.length, 0)} pages, ${docs.reduce((s, d) => s + d.scanned.length, 0)} scanned`);
+      const spec = S.confirmed;
+      const res = await BQAI.qualify({ sample: S.sample, limits, signal: S.abort.signal, docs, specs: spec.specs, specsMd: BQ.specsMarkdown(spec.specs),
+        regDigest: S.register ? S.register.digest : "", progress, log: logLine });
+      progress("gates", 0, 1, "Checking gates and evidence");
+      S.result = finish(res, docs);
+      progress("gates", 1, 1, "Done");
+      await saveRun(S.result);
+      S.running = false; window.removeEventListener("beforeunload", guard);
+      renderResults(); show("results");
+    } catch (e) {
+      S.running = false; window.removeEventListener("beforeunload", guard);
+      const code = (e && e.code) || "error";
+      STAGES.forEach(([k]) => { const li = $("stage-" + k); if (li && li.querySelector(".tag.amber")) stage(k, "fail"); });
+      err("run-err", code === "cancelled" ? "Stopped. Run again to continue: finished parts are reused." :
+        (BQAI.ERR_COPY[code] || `The run stopped (${e && e.message ? e.message : code}).`));
+      $("stop").hidden = true; $("rerun").hidden = false; $("run-back").hidden = false;
+    }
+  }
+
+  function finish(res, docs) {
+    const { terms, reqs, failures } = res;
+    const bid = terms.bid;
+    bid.documents = docs.map((d) => `${d.file} (${d.pages.length} pp${d.scanned.length ? ", scanned" : ""})`);
+    const assessment = { flags: terms.flags.slice() };
+    const nPartner = reqs.filter((r) => r.scope === "Partner").length;
+    if (bid.subcontracting === "Not allowed" && nPartner) assessment.flags.unshift({ reference: "BDS 8.1",
+      flag: `Subcontracting is not allowed, while ${nPartner} requirement rows are partner equipment, software or integration. VITRO would supply these as prime or bid as a joint venture.` });
+    const regRows = S.register ? S.register.rows : {};
+    const register = { rows: regRows, byId: byIdOf(regRows) };
+    let gates;
+    if (bid.abc_php) {
+      gates = { gate1_slcc: BQ.gate1(regRows, bid.abc_php, BQ.asDate(bid.bid_deadline), bid.slcc_window_years || 5, !!bid.slcc_excludes_ongoing_recurring),
+        gate2_delivery: BQ.gate2(regRows, bid.delivery_days, []) };
+    } else {
+      gates = { gate1_slcc: { result: "Unverified", threshold_rule_a_php: 0, notes: ["ABC not found."] },
+        gate2_delivery: { result: "Unverified", required_days: bid.delivery_days, notes: ["ABC not found."] } };
+    }
+    const g1 = gates.gate1_slcc, g2 = gates.gate2_delivery;
+    assessment.gate1 = { result: g1.result, basis: g1.notes.join(" ") + (g1.threshold_rule_a_php ? ` Threshold 50% of ABC = PHP ${g1.threshold_rule_a_php.toLocaleString("en-US", { minimumFractionDigits: 2 })}.` : "") };
+    assessment.gate2 = { result: g2.result, basis: `Required ${g2.required_days ?? "?"} days. ` + g2.notes.join(" ") };
+    const val = BQ.validate({ bid, assessment, reqs, specs: S.confirmed.specs, register, gates });
+    return { id: new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14) + "-" + Math.random().toString(16).slice(2, 8),
+      at: Date.now(), title: S.title || `${bid.procuring_entity || ""}: ${bid.title || ""}`.replace(/^: |: $/g, "") || S.files[0].name,
+      val, bid, assessment, reqs, specName: S.confirmed.name, specUploaded: S.confirmed.uploaded, specSites: S.confirmed.specs.sites,
+      registerName: S.register ? S.register.name : null, failures: failures.map((f) => f.label), author: S.email };
+  }
+  async function saveRun(r) {
+    if (!S.db || !S.uid) return;
+    try {
+      await putParts(`data/users/${S.uid}/runs/${r.id}`, { title: r.title, at: r.at, verdict: r.val.verdict, gates: r.val.gates,
+        site: r.val.recommended_site || "", spec: r.specName, incomplete: r.failures.length > 0 }, r);
+    } catch (e) { logLine("This run could not be saved to your history; download the files now."); }
+  }
+
+  // ------------------------------------------------------------ results
+  function renderResults() {
+    const r = S.result, v = r.val, b = r.bid;
+    $("res-title").textContent = `${b.procuring_entity || "Procuring entity not found"}: ${b.title || r.title}`;
+    $("res-verdict").innerHTML = tag(v.verdict, true) + (v.recommended_site ? ` Best-fit site: <strong>${esc(v.recommended_site)}</strong>` : "");
+    $("res-incomplete").hidden = !r.failures.length;
+    $("res-incomplete").textContent = r.failures.length ? `Incomplete: ${r.failures.length} part(s) could not be read (${r.failures.join("; ")}). Rows from those parts are missing or Unverified. Run again from step 3 to retry; finished parts are reused.` : "";
+    const kpi = (l, val) => `<div class="kpi"><div class="kpi-label">${esc(l)}</div><div class="kpi-value">${esc(val)}</div></div>`;
+    $("res-kpis").innerHTML = kpi("Reference", b.reference_no || "-") +
+      kpi("Approved Budget for the Contract (PHP)", typeof b.abc_php === "number" ? b.abc_php.toLocaleString("en-US", { minimumFractionDigits: 2 }) : "Not stated") +
+      kpi("Bid deadline", b.bid_deadline || "-") + kpi("Requirements", String(r.reqs.length));
+    const src = `Source: ${(b.documents || []).join("; ")}; ${r.specName}; Reference Register ${r.registerName || "(none)"}.`;
+    $("res-source").textContent = src;
+    $("res-gates").innerHTML = [
+      ["1. Eligibility (SLCC)", "Bid Data Sheet (BDS) eligibility; a completed contract that meets the Single Largest Completed Contract (SLCC) requirement", v.gates.gate1],
+      ["2. Delivery lead time", `Section VI Schedule of Requirements: whether the delivery period is feasible${b.delivery_days ? ` (required: ${b.delivery_days} days)` : ""}`, v.gates.gate2],
+      ["3. Data center compliance", `Section VII Technical Specifications against the Specifications Table${v.recommended_site ? `, best-fit site ${v.recommended_site}` : ""}`, v.gates.gate3],
+    ].map(([g, w, res]) => `<tr><td>${esc(g)}</td><td>${esc(w)}</td><td>${tag(res)}</td></tr>`).join("");
+    $("res-gates-src").textContent = `Source: uploaded bid documents; ${r.registerName || "no Reference Register (gates 1 and 2 cannot be verified)"}; ${r.specName} for gate 3.`;
+    const cnt = (c, k) => `<td class="num">${(c && c[k]) || 0}</td>`;
+    $("res-areas").innerHTML = v.areas.map((a) => `<tr><td>${esc(a.area)}</td><td>${tag(a.result)}</td><td class="num">${a.n}</td>${["Comply", "Partial", "Clarify", "Unverified", "Gap"].map((k) => cnt(a.counts, k)).join("")}</tr>`).join("");
+    $("res-areas-src").textContent = `Source: matrix ratings${v.recommended_site ? " for " + v.recommended_site : ""}, against ${r.specName}. Colocation includes facility rating, security and service levels; additional requirements are certifications, personnel and other items.`;
+    $("res-sites").innerHTML = v.site_fit.map((f) => `<tr><td>${esc(f.site)}${f.site === v.recommended_site ? ' <span class="small">(recommended)</span>' : ""}</td><td>${tag(f.fit)}</td>
+      ${["Comply", "Partial", "Clarify", "Unverified", "Gap"].map((k) => cnt(f.counts, k)).join("")}<td class="mono">${esc(f.gaps.map((x) => x.split(" ").slice(1).join(" ")).join(", "))}</td></tr>`).join("");
+    $("res-sites-src").textContent = `Source: ${r.specName}. Ranked by gaps, then Comply count. Ratings are drafts until a reviewer signs off each row in the matrix.`;
+    $("res-clar-card").hidden = !v.clarifications.length;
+    $("res-clar").innerHTML = v.clarifications.map((q) => `<li>${esc(q.question)} <span class="small mono">${esc(q.id)}${q.doc ? " · " + esc(q.doc) : ""}${q.clause ? " cl. " + esc(q.clause) : ""}${q.category ? " · " + esc(q.category) : ""}</span></li>`).join("");
+    $("res-flags-card").hidden = !(r.assessment.flags || []).length;
+    $("res-flags").innerHTML = (r.assessment.flags || []).map((f) => `<tr><td>${esc(f.flag)}</td><td class="mono">${esc(f.reference)}</td></tr>`).join("");
+    err("dl-err");
+  }
+  const slug = (r) => (r.bid.reference_no || r.title || "Bid").replace(/[^A-Za-z0-9]+/g, "_").slice(0, 40).replace(/^_|_$/g, "");
+  async function offer(filename, data) {
+    if (!S.downloads) return err("dl-err", "Downloads are not available in this view. Open the page in claude.ai in a browser.");
+    try { await S.downloads.save({ filename, data }); err("dl-err"); }
+    catch (e) { if (e && e.code && !/cancel|declin|dismiss/i.test(e.code)) err("dl-err", `The file could not be offered (${e.code}).`); }
+  }
+  $("dl-matrix").addEventListener("click", () => {
+    const r = S.result;
+    const buf = BQDocs.buildMatrix(XLSX, { val: r.val, bid: r.bid, assessment: r.assessment, reqs: r.reqs, specs: { sites: r.specSites }, specName: r.specName, registerName: r.registerName });
+    offer(`${slug(r)}_Matrix.xlsx`, new Uint8Array(buf));
+  });
+  $("dl-memo").addEventListener("click", async () => {
+    const r = S.result;
+    try {
+      // The official memo template, published beside the page as base64 text (artifacts do not serve .docx)
+      const b64 = await fetch("memo-template.b64.txt").then((x) => { if (!x.ok) throw 0; return x.text(); });
+      const bin = atob(b64.trim()), tpl = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) tpl[i] = bin.charCodeAt(i);
+      const memo = BQDocs.buildMemoJson({ val: r.val, bid: r.bid, assessment: r.assessment, reqs: r.reqs, owner: r.author || "Solutions",
+        spec: { name: r.specName, uploaded: r.specUploaded }, register: r.registerName });
+      if (r.failures.length) memo.summary = `INCOMPLETE READ: ${r.failures.length} part(s) of the bid package could not be read; see the matrix. ` + memo.summary;
+      const bytes = await BQDocs.fillMemo(JSZip, tpl, memo, DOMParser, XMLSerializer);
+      offer(`${slug(r)}_GoNoGo.docx`, bytes);
+    } catch (e) { err("dl-err", "The memo could not be built. Reload the page and try again."); }
+  });
+
+  // ------------------------------------------------------------ navigation
+  document.addEventListener("click", (e) => {
+    const g = e.target.closest("[data-go]"); if (g) return show(g.dataset.go);
+    const t = e.target.closest("[data-run]"); if (t) return openRun(t.dataset.run);
+    if (e.target.closest("#use-latest")) return useLatest();
+    if (e.target.closest("#use-latest-reg")) return useLatestReg();
+    if (e.target.closest("#reg-clear")) { S.register = null; renderSpecPage(); }
+  });
+  start();
+})();
+</script>
